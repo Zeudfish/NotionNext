@@ -79,6 +79,16 @@ function generateLocalesSitemap(link, allPages, locale) {
       loc: buildSitemapLoc({
         baseUrl: normalizedLink,
         locale: normalizedLocale,
+        slug: 'food'
+      }),
+      lastmod: dateNow,
+      changefreq: 'daily',
+      priority: '0.7'
+    },
+    {
+      loc: buildSitemapLoc({
+        baseUrl: normalizedLink,
+        locale: normalizedLocale,
         slug: 'rss/feed.xml'
       }),
       lastmod: dateNow,
