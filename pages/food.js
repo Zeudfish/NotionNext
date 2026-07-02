@@ -1,9 +1,11 @@
 import Head from 'next/head'
 import { useMemo, useState } from 'react'
 import { fetchGlobalAllData } from '@/lib/db/SiteDataApi'
+import { fetchNotionPageBlocks } from '@/lib/db/notion/getPostBlocks'
 import {
   filterFoodItems,
   getDefaultFoodItems,
+  getFoodItemsFromBlockMap,
   getFoodItemsFromPages,
   getFoodOptions,
   sortFoodItems
@@ -16,6 +18,8 @@ const PRICE_RANGES = [
   { label: '¥150-250', value: '150-250' },
   { label: '¥250+', value: '250-' }
 ]
+
+const SHANGHAI_FOOD_PAGE_ID = '38f37eae-c0b1-81f3-a63b-f0a76a1115a0'
 
 const Select = ({ label, value, onChange, children }) => (
   <label className='food-filter'>
@@ -304,7 +308,13 @@ export default function FoodPage({ allItems, defaultItems, options }) {
 
 export async function getStaticProps(req) {
   const props = await fetchGlobalAllData({ from: 'food', locale: req?.locale })
-  const allItems = sortFoodItems(getFoodItemsFromPages(props?.allPages))
+  let allItems = sortFoodItems(getFoodItemsFromPages(props?.allPages))
+
+  if (allItems.length === 0) {
+    const foodRecordMap = await fetchNotionPageBlocks(SHANGHAI_FOOD_PAGE_ID, 'food-source')
+    allItems = sortFoodItems(getFoodItemsFromBlockMap(foodRecordMap))
+  }
+
   return {
     props: {
       allItems,

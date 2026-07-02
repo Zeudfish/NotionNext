@@ -1,6 +1,7 @@
 import {
   filterFoodItems,
   getDefaultFoodItems,
+  getFoodItemsFromBlockMap,
   getFoodItemsFromPages,
   getFoodOptions,
   sortFoodItems
@@ -72,6 +73,70 @@ describe('food recommendations', () => {
         priority: '推荐',
         stars: 4,
         note: '适合约饭'
+      })
+    ])
+  })
+
+  it('extracts rows from the embedded Shanghai food Notion collection', () => {
+    const blockMap = {
+      collection: {
+        foodCollection: {
+          value: {
+            name: [['上海美食点位']],
+            schema: {
+              title: { name: 'Name' },
+              area: { name: '区域' },
+              cuisine: { name: '菜系' },
+              status: { name: '状态' },
+              stars: { name: '星级' },
+              price: { name: '人均' },
+              note: { name: '备注' },
+              address: { name: '地址' },
+              map: { name: '地图链接' }
+            }
+          }
+        }
+      },
+      collection_query: {
+        foodCollection: {
+          view: {
+            collection_group_results: {
+              blockIds: ['row1', 'row2']
+            }
+          }
+        }
+      },
+      block: {
+        row1: {
+          value: {
+            id: 'row1',
+            parent_id: 'foodCollection',
+            properties: {
+              title: [['龙门阵']],
+              area: [['闵行']],
+              cuisine: [['重庆菜']],
+              status: [['复访']],
+              stars: [['5']],
+              price: [['100']],
+              note: [['尖椒肥肠鸡绝绝子']],
+              address: [['龙茗路2781号']],
+              map: [['https://uri.amap.com/marker', [['a', 'https://uri.amap.com/marker']]]]
+            }
+          }
+        },
+        row2: { value: { id: 'row2', parent_id: 'foodCollection' } }
+      }
+    }
+
+    expect(getFoodItemsFromBlockMap(blockMap)).toEqual([
+      expect.objectContaining({
+        name: '龙门阵',
+        district: '闵行',
+        cuisine: '重庆菜',
+        priority: 'N刷',
+        stars: 5,
+        price: 100,
+        note: '尖椒肥肠鸡绝绝子'
       })
     ])
   })
