@@ -12,7 +12,7 @@ import { MenuItemDrop } from './MenuItemDrop'
  * @param {*} props
  * @returns
  */
-export const MenuList = ({ customNav, customMenu }) => {
+export const MenuList = ({ customNav, customMenu, categoryOptions }) => {
   const { locale } = useGlobal()
   const [isOpen, changeIsOpen] = useState(false)
   const toggleIsOpen = () => {
@@ -28,6 +28,13 @@ export const MenuList = ({ customNav, customMenu }) => {
     router.events.on('routeChangeStart', closeMenu)
   })
 
+  const categoryLink = {
+    icon: 'fas fa-folder',
+    name: locale.COMMON.CATEGORY,
+    href: '/category',
+    show: siteConfig('SIMPLE_MENU_CATEGORY', null, CONFIG)
+  }
+
   let links = [
     {
       icon: 'fas fa-search',
@@ -41,12 +48,7 @@ export const MenuList = ({ customNav, customMenu }) => {
       href: '/archive',
       show: siteConfig('SIMPLE_MENU_ARCHIVE', null, CONFIG)
     },
-    {
-      icon: 'fas fa-folder',
-      name: locale.COMMON.CATEGORY,
-      href: '/category',
-      show: siteConfig('SIMPLE_MENU_CATEGORY', null, CONFIG)
-    },
+    categoryLink,
     {
       icon: 'fas fa-tag',
       name: locale.COMMON.TAGS,
@@ -61,7 +63,11 @@ export const MenuList = ({ customNav, customMenu }) => {
 
   // 如果 开启自定义菜单，则覆盖Page生成的菜单
   if (siteConfig('CUSTOM_MENU')) {
-    links = customMenu
+    links = customMenu || []
+    const hasCategoryLink = links.some(link => link?.href?.startsWith('/category'))
+    if (categoryOptions?.length > 0 && !hasCategoryLink) {
+      links = [categoryLink, ...links]
+    }
   }
 
   if (!links || links.length === 0) {
