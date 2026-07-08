@@ -55,25 +55,19 @@ const RecommendPosts = dynamic(() => import('./components/RecommendPosts'), {
   ssr: false
 })
 
-const ArticleBackButton = () => {
-  const router = useRouter()
-  const goBack = () => {
-    if (isBrowser && window.history.length > 1) {
-      router.back()
-      return
-    }
-    router.push('/')
-  }
+const ArticleBackButton = ({ post }) => {
+  const listHref = post?.category
+    ? `/category/${encodeURIComponent(post.category)}`
+    : '/'
 
   return (
-    <button
-      type='button'
-      onClick={goBack}
+    <SmartLink
+      href={listHref}
       className='mb-6 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-500 hover:shadow-md dark:border-gray-700 dark:bg-black dark:text-gray-300 dark:hover:border-blue-500 dark:hover:text-blue-300'
-      aria-label='返回上一页'>
+      aria-label='返回文章列表'>
       <i className='fas fa-arrow-left' />
-      <span>返回</span>
-    </button>
+      <span>返回文章列表</span>
+    </SmartLink>
   )
 }
 
@@ -248,7 +242,7 @@ const LayoutSlug = props => {
 
       {!lock && post && (
         <div className={`px-2  ${fullWidth ? '' : 'xl:max-w-4xl 2xl:max-w-6xl'}`}>
-          <ArticleBackButton />
+          <ArticleBackButton post={post} />
 
           {/* 文章信息 */}
           <ArticleInfo post={post} />
