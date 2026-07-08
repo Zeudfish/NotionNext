@@ -55,6 +55,18 @@ const RecommendPosts = dynamic(() => import('./components/RecommendPosts'), {
   ssr: false
 })
 
+const backButtonClassName = 'mb-6 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-500 hover:shadow-md dark:border-gray-700 dark:bg-black dark:text-gray-300 dark:hover:border-blue-500 dark:hover:text-blue-300'
+
+const HomeBackButton = () => (
+  <SmartLink
+    href='/'
+    className={backButtonClassName}
+    aria-label='返回首页'>
+    <i className='fas fa-home' />
+    <span>返回首页</span>
+  </SmartLink>
+)
+
 const ArticleBackButton = ({ post }) => {
   const listHref = post?.category
     ? `/category/${encodeURIComponent(post.category)}`
@@ -63,7 +75,7 @@ const ArticleBackButton = ({ post }) => {
   return (
     <SmartLink
       href={listHref}
-      className='mb-6 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-500 hover:shadow-md dark:border-gray-700 dark:bg-black dark:text-gray-300 dark:hover:border-blue-500 dark:hover:text-blue-300'
+      className={backButtonClassName}
       aria-label='返回文章列表'>
       <i className='fas fa-arrow-left' />
       <span>返回文章列表</span>
@@ -164,8 +176,10 @@ const LayoutIndex = props => {
  * @returns
  */
 const LayoutPostList = props => {
+  const showHomeBack = Boolean(props?.category || props?.tag || props?.keyword)
   return (
     <>
+      {showHomeBack && <HomeBackButton />}
       <BlogPostBar {...props} />
       {siteConfig('POST_LIST_STYLE') === 'page' ? (
         <BlogListPage {...props} />
@@ -214,6 +228,7 @@ const LayoutArchive = props => {
   const { archivePosts } = props
   return (
     <>
+      <HomeBackButton />
       <div className='mb-10 pb-20 md:py-12 p-3  min-h-screen w-full'>
         {Object.keys(archivePosts).map(archiveTitle => (
           <BlogArchiveItem
@@ -316,6 +331,7 @@ const LayoutCategoryIndex = props => {
   const { categoryOptions } = props
   return (
     <>
+      <HomeBackButton />
       <div id='category-list' className='duration-200 flex flex-wrap'>
         {categoryOptions?.map(category => {
           return (

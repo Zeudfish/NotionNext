@@ -1,5 +1,6 @@
 import Head from 'next/head'
 import { useMemo, useState } from 'react'
+import SmartLink from '@/components/SmartLink'
 import { fetchGlobalAllData } from '@/lib/db/SiteDataApi'
 import { fetchNotionPageBlocks } from '@/lib/db/notion/getPostBlocks'
 import {
@@ -84,6 +85,13 @@ export default function FoodPage({ allItems, defaultItems, options }) {
         />
       </Head>
 
+      <div className='food-top-actions'>
+        <SmartLink href='/' className='food-home-link' aria-label='返回首页'>
+          <i className='fas fa-home' />
+          <span>返回首页</span>
+        </SmartLink>
+      </div>
+
       <section className='food-hero'>
         <p className='food-kicker'>Zeurd Shanghai Food List</p>
         <h1>上海吃饭清单</h1>
@@ -143,6 +151,29 @@ export default function FoodPage({ allItems, defaultItems, options }) {
         .food-hero, .food-panel {
           max-width: 1080px;
           margin: 0 auto;
+        }
+        .food-top-actions {
+          max-width: 1080px;
+          margin: 0 auto;
+        }
+        .food-home-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          border: 1px solid rgba(23, 32, 51, 0.1);
+          border-radius: 999px;
+          padding: 9px 16px;
+          background: rgba(255, 255, 255, 0.82);
+          color: #475569;
+          font-size: 14px;
+          text-decoration: none;
+          box-shadow: 0 12px 28px rgba(31, 41, 55, 0.08);
+          transition: transform 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+        }
+        .food-home-link:hover {
+          transform: translateY(-1px);
+          border-color: rgba(37, 99, 235, 0.35);
+          color: #2563eb;
         }
         .food-hero {
           padding: 42px 0 32px;
