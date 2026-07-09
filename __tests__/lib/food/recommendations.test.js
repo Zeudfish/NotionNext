@@ -8,42 +8,44 @@ import {
 } from '@/lib/food/recommendations'
 
 const items = [
-  { name: '一般店', district: '静安', cuisine: '本帮菜', price: '80', priority: '已吃', stars: 2 },
-  { name: '复刷店', district: '闵行', cuisine: '重庆菜', price: '100', priority: 'N刷', stars: 5 },
-  { name: '三刷店', district: '静安', cuisine: '火锅', price: '200', priority: '三刷', stars: 5 }
+  { name: '一般店', district: '静安', cuisine: '本帮菜', price: '80', priority: '已吃', recommendation: 'npc' },
+  { name: '复刷店', district: '闵行', cuisine: ['重庆菜', '火锅'], price: '100', priority: '复访', recommendation: '夯' },
+  { name: '顶级店', district: '静安', cuisine: '火锅', price: '200', priority: '复访', recommendation: '顶级' },
+  { name: '避雷店', district: '静安', cuisine: '西餐', price: '120', priority: '避雷', recommendation: '拉完了' }
 ]
 
 describe('food recommendations', () => {
   it('sorts by recommendation score without mutating input', () => {
     const sorted = sortFoodItems(items)
 
-    expect(sorted.map(item => item.name)).toEqual(['复刷店', '三刷店', '一般店'])
-    expect(items.map(item => item.price)).toEqual(['80', '100', '200'])
+    expect(sorted.map(item => item.name)).toEqual(['复刷店', '顶级店', '一般店', '避雷店'])
+    expect(items.map(item => item.price)).toEqual(['80', '100', '200', '120'])
   })
 
   it('uses recommended stores for the default top list', () => {
     const defaults = getDefaultFoodItems(items, 10)
 
-    expect(defaults.map(item => item.name)).toEqual(['复刷店', '三刷店'])
+    expect(defaults.map(item => item.name)).toEqual(['复刷店', '顶级店'])
   })
 
-  it('filters by district, cuisine, priority and price range', () => {
+  it('filters by district, multi cuisine, recommendation level and price range', () => {
     const filtered = filterFoodItems(items, {
-      district: '静安',
+      district: '闵行',
       cuisine: '火锅',
-      priority: '三刷',
-      priceRange: '150-250'
+      priority: '夯',
+      priceRange: '80-150'
     })
 
     expect(filtered).toHaveLength(1)
-    expect(filtered[0].name).toBe('三刷店')
+    expect(filtered[0].name).toBe('复刷店')
+    expect(filtered[0].cuisine).toBe('重庆菜 / 火锅')
   })
 
-  it('builds unique filter options', () => {
+  it('builds unique filter options from multi-select cuisines and recommendation levels', () => {
     expect(getFoodOptions(items)).toEqual({
       districts: ['静安', '闵行'],
-      cuisines: ['本帮菜', '重庆菜', '火锅'],
-      priorities: ['N刷', '三刷', '已吃']
+      cuisines: ['本帮菜', '重庆菜', '火锅', '西餐'],
+      priorities: ['夯', '顶级', 'npc', '拉完了']
     })
   })
 
@@ -54,10 +56,10 @@ describe('food recommendations', () => {
         type: 'Food',
         status: 'Published',
         区域: '徐汇',
-        菜系: '日料',
+        菜系: ['日料', '自助'],
         人均: '180',
-        推荐等级: '推荐',
-        评分: '4',
+        状态: '复访',
+        星级: '顶级',
         评价: '适合约饭'
       },
       { title: '草稿店', type: 'Food', status: 'Invisible' },
@@ -68,10 +70,11 @@ describe('food recommendations', () => {
       expect.objectContaining({
         name: 'Notion 店',
         district: '徐汇',
-        cuisine: '日料',
+        cuisine: '日料 / 自助',
+        cuisines: ['日料', '自助'],
         price: 180,
-        priority: '推荐',
-        stars: 4,
+        priority: 'N刷',
+        recommendation: '顶级',
         note: '适合约饭'
       })
     ])
@@ -114,9 +117,9 @@ describe('food recommendations', () => {
             properties: {
               title: [['龙门阵']],
               area: [['闵行']],
-              cuisine: [['重庆菜']],
+              cuisine: [['重庆菜、火锅']],
               status: [['复访']],
-              stars: [['5']],
+              stars: [['夯']],
               price: [['100']],
               note: [['尖椒肥肠鸡绝绝子']],
               address: [['龙茗路2781号']],
@@ -132,9 +135,10 @@ describe('food recommendations', () => {
       expect.objectContaining({
         name: '龙门阵',
         district: '闵行',
-        cuisine: '重庆菜',
+        cuisine: '重庆菜 / 火锅',
+        cuisines: ['重庆菜', '火锅'],
         priority: 'N刷',
-        stars: 5,
+        recommendation: '夯',
         price: 100,
         note: '尖椒肥肠鸡绝绝子'
       })

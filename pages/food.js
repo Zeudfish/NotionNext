@@ -21,6 +21,66 @@ const PRICE_RANGES = [
 ]
 
 const SHANGHAI_FOOD_PAGE_ID = '38f37eae-c0b1-81f3-a63b-f0a76a1115a0'
+const SHANGHAI_FOOD_DATABASE_ID = 'b01c281df7d74d9dacfddca425818f86'
+
+const textFromRichText = parts => (parts || []).map(part => part?.plain_text || '').join('')
+
+const valueFromNotionApiProperty = property => {
+  if (!property) return ''
+
+  switch (property.type) {
+    case 'title':
+      return textFromRichText(property.title)
+    case 'rich_text':
+      return textFromRichText(property.rich_text)
+    case 'number':
+      return property.number
+    case 'select':
+      return property.select?.name || ''
+    case 'multi_select':
+      return property.multi_select?.map(option => option.name) || []
+    case 'url':
+      return property.url || ''
+    default:
+      return ''
+  }
+}
+
+const fetchFoodItemsFromNotionApi = async () => {
+  if (!process.env.NOTION_API_KEY) return []
+
+  const results = []
+  let startCursor
+
+  do {
+    const response = await fetch(`https://api.notion.com/v1/databases/${SHANGHAI_FOOD_DATABASE_ID}/query`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.NOTION_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Notion-Version': '2022-06-28'
+      },
+      body: JSON.stringify({ page_size: 100, ...(startCursor ? { start_cursor: startCursor } : {}) })
+    })
+
+    if (!response.ok) {
+      console.warn('[food] Notion API fallback failed', response.status, await response.text())
+      return []
+    }
+
+    const payload = await response.json()
+    results.push(...(payload.results || []))
+    startCursor = payload.has_more ? payload.next_cursor : undefined
+  } while (startCursor)
+
+  return results.map(page => {
+    const item = {}
+    Object.entries(page.properties || {}).forEach(([name, property]) => {
+      item[name] = valueFromNotionApiProperty(property)
+    })
+    return item
+  })
+}
 
 const Select = ({ label, value, onChange, children }) => (
   <label className='food-filter'>
@@ -32,7 +92,6 @@ const Select = ({ label, value, onChange, children }) => (
 )
 
 const FoodCard = ({ item, index }) => {
-  const stars = item.stars ? '★'.repeat(Math.max(1, Math.min(item.stars, 5))) : '未评分'
   return (
     <article className='food-card'>
       <div className='food-card-rank'>{index + 1}</div>
@@ -45,7 +104,7 @@ const FoodCard = ({ item, index }) => {
             </p>
           </div>
           <div className='food-rating'>
-            <span>{stars}</span>
+            <span>{item.recommendation || '未分级'}</span>
             <b>{item.priority}</b>
           </div>
         </div>
@@ -81,7 +140,7 @@ export default function FoodPage({ allItems, defaultItems, options }) {
         <title>上海吃饭清单 | Zeurd</title>
         <meta
           name='description'
-          content='Zeurd 的上海吃饭清单：默认展示推荐前十，并支持按区域、人均、菜系和推荐等级筛选。'
+          content='Zeurd 的上海吃饭清单：按复刷意愿和推荐程度整理，支持按区域、人均、菜系和等级筛选。'
         />
       </Head>
 
@@ -96,8 +155,8 @@ export default function FoodPage({ allItems, defaultItems, options }) {
         <p className='food-kicker'>Zeurd Shanghai Food List</p>
         <h1>上海吃饭清单</h1>
         <p>
-          不是大众点评式客观排名，而是我自己会复刷、会推荐、或明确避雷的店。
-          数据直接来自 Notion 店铺数据库；默认展示推荐前十，需要时按区域、人均、菜系和推荐等级筛选。
+          主观吃饭清单：记录我会复刷、愿意推荐，或者明确避雷的店。
+          可按区域、人均、菜系和等级筛选。
         </p>
       </section>
 
@@ -120,7 +179,7 @@ export default function FoodPage({ allItems, defaultItems, options }) {
               <option key={item} value={item}>{item}</option>
             ))}
           </Select>
-          <Select label='推荐等级' value={priority} onChange={setPriority}>
+          <Select label='等级' value={priority} onChange={setPriority}>
             <option value=''>全部等级</option>
             {options.priorities.map(item => (
               <option key={item} value={item}>{item}</option>
@@ -340,6 +399,11 @@ export default function FoodPage({ allItems, defaultItems, options }) {
 export async function getStaticProps(req) {
   const props = await fetchGlobalAllData({ from: 'food', locale: req?.locale })
   let allItems = sortFoodItems(getFoodItemsFromPages(props?.allPages))
+
+  if (allItems.length === 0) {
+    const notionApiItems = await fetchFoodItemsFromNotionApi()
+    allItems = sortFoodItems(notionApiItems)
+  }
 
   if (allItems.length === 0) {
     const foodRecordMap = await fetchNotionPageBlocks(SHANGHAI_FOOD_PAGE_ID, 'food-source')
