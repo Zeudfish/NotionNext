@@ -4,6 +4,8 @@ import {
   getFoodItemsFromBlockMap,
   getFoodItemsFromPages,
   getFoodOptions,
+  getRecommendationOptionLabel,
+  getRecommendationStars,
   sortFoodItems
 } from '@/lib/food/recommendations'
 
@@ -47,6 +49,16 @@ describe('food recommendations', () => {
       cuisines: ['本帮菜', '重庆菜', '火锅', '西餐'],
       priorities: ['夯', '顶级', 'npc', '拉完了']
     })
+  })
+
+  it('formats recommendation stars and dropdown labels', () => {
+    expect(getRecommendationStars('夯')).toBe('★★★★★')
+    expect(getRecommendationStars('顶级')).toBe('★★★★')
+    expect(getRecommendationStars('人上人')).toBe('★★★')
+    expect(getRecommendationStars('npc')).toBe('★★')
+    expect(getRecommendationStars('拉完了')).toBe('★')
+    expect(getRecommendationOptionLabel('夯')).toBe('夯（★★★★★）')
+    expect(getRecommendationOptionLabel('拉完了')).toBe('拉完了（★）')
   })
 
   it('extracts published food rows from Notion pages', () => {

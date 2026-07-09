@@ -9,6 +9,8 @@ import {
   getFoodItemsFromBlockMap,
   getFoodItemsFromPages,
   getFoodOptions,
+  getRecommendationOptionLabel,
+  getRecommendationStars,
   sortFoodItems
 } from '@/lib/food/recommendations'
 
@@ -104,8 +106,8 @@ const FoodCard = ({ item, index }) => {
             </p>
           </div>
           <div className='food-rating'>
-            <span>{item.recommendation || '未分级'}</span>
-            <b>{item.priority}</b>
+            <span>{getRecommendationStars(item.recommendation)}</span>
+            <b>{item.recommendation || '未分级'}</b>
           </div>
         </div>
         <p className='food-note'>{item.note}</p>
@@ -182,7 +184,7 @@ export default function FoodPage({ allItems, defaultItems, options }) {
           <Select label='等级' value={priority} onChange={setPriority}>
             <option value=''>全部等级</option>
             {options.priorities.map(item => (
-              <option key={item} value={item}>{item}</option>
+              <option key={item} value={item}>{getRecommendationOptionLabel(item)}</option>
             ))}
           </Select>
         </div>
