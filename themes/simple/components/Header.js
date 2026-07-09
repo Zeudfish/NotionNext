@@ -1,4 +1,3 @@
-import LazyImage from '@/components/LazyImage'
 import { siteConfig } from '@/lib/config'
 import SmartLink from '@/components/SmartLink'
 import CONFIG from '../config'
@@ -9,7 +8,7 @@ import SocialButton from './SocialButton'
  * @returns
  */
 export default function Header(props) {
-  const { siteInfo, postCount } = props
+  const { postCount } = props
   const tagline = siteConfig('SIMPLE_LOGO_DESCRIPTION', null, CONFIG)
   const description = siteConfig('DESCRIPTION')
 
@@ -17,17 +16,6 @@ export default function Header(props) {
     <header className='zeurd-simple-hero relative z-10 overflow-hidden px-5 py-12 text-left md:px-8 md:py-16'>
       <div className='zeurd-hero-shell mx-auto flex w-full max-w-6xl flex-col gap-8 md:flex-row md:items-center md:justify-between'>
         <SmartLink href='/' className='zeurd-hero-main group flex flex-col gap-6 text-inherit md:flex-row md:items-center'>
-          <div className='zeurd-avatar-wrap shrink-0'>
-            <LazyImage
-              priority={true}
-              src={siteInfo?.icon}
-              className='zeurd-avatar rounded-full'
-              width={104}
-              height={104}
-              alt={siteConfig('AUTHOR')}
-            />
-          </div>
-
           <div className='zeurd-hero-copy'>
             <div className='zeurd-kicker'>Research notes · Engineering logs</div>
             <h1 className='zeurd-title'>{siteConfig('AUTHOR')}</h1>
@@ -90,31 +78,6 @@ export default function Header(props) {
 
         .zeurd-hero-main {
           text-decoration: none !important;
-        }
-
-        .zeurd-avatar-wrap {
-          width: 116px;
-          height: 116px;
-          border-radius: 32px;
-          padding: 6px;
-          background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(219, 234, 254, 0.72));
-          box-shadow: 0 22px 60px rgba(37, 99, 235, 0.22);
-          transform: rotate(-2deg);
-          transition: transform 180ms ease, box-shadow 180ms ease;
-        }
-
-        .zeurd-hero-main:hover .zeurd-avatar-wrap {
-          transform: rotate(0deg) translateY(-2px);
-          box-shadow: 0 28px 72px rgba(37, 99, 235, 0.28);
-        }
-
-        #theme-simple .zeurd-avatar {
-          width: 104px !important;
-          height: 104px !important;
-          border: 0 !important;
-          border-radius: 26px !important;
-          box-shadow: none !important;
-          object-fit: cover;
         }
 
         .zeurd-kicker {
@@ -257,18 +220,6 @@ export default function Header(props) {
         @media (max-width: 768px) {
           #theme-simple > .zeurd-simple-hero {
             padding: 2.4rem 1.15rem !important;
-          }
-
-          .zeurd-avatar-wrap {
-            width: 92px;
-            height: 92px;
-            border-radius: 26px;
-          }
-
-          #theme-simple .zeurd-avatar {
-            width: 80px !important;
-            height: 80px !important;
-            border-radius: 20px !important;
           }
 
           .zeurd-hero-side {
