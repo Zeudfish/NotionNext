@@ -96,7 +96,10 @@ export const useSimpleGlobal = () => useContext(ThemeGlobalSimple)
 const LayoutBase = props => {
   const { children, slotTop } = props
   const { onLoading, fullWidth } = useGlobal()
+  const router = useRouter()
   const searchModal = useRef(null)
+  const cleanPath = router.asPath.split('?')[0].replace(/\/$/, '') || '/'
+  const showHeroHeader = cleanPath === '/' || cleanPath === '/zh-CN'
 
   return (
     <ThemeGlobalSimple.Provider value={{ searchModal }}>
@@ -107,8 +110,8 @@ const LayoutBase = props => {
 
         {siteConfig('SIMPLE_TOP_BAR', null, CONFIG) && <TopBar {...props} />}
 
-        {/* 顶部LOGO */}
-        <Header {...props} />
+        {/* 首页 Hero，仅在主页展示；/food 等功能页不显示研究站身份块 */}
+        {showHeroHeader && <Header {...props} />}
 
         {/* 导航栏 */}
         <NavBar {...props} />
