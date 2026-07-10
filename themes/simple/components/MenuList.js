@@ -48,12 +48,6 @@ export const MenuList = ({ customNav, customMenu, categoryOptions }) => {
       name: locale.COMMON.TAGS,
       href: '/tag',
       show: siteConfig('SIMPLE_MENU_TAG', null, CONFIG)
-    },
-    {
-      icon: 'fas fa-user-astronaut',
-      name: locale.NAV.ABOUT,
-      href: '/about',
-      show: true
     }
   ]
 
@@ -64,12 +58,6 @@ export const MenuList = ({ customNav, customMenu, categoryOptions }) => {
   if (siteConfig('CUSTOM_MENU')) {
     const customLinks = [...(customMenu || [])]
     const hasHome = customLinks.some(link => link?.href === '/')
-    const hasAbout = customLinks.some(link => {
-      const href = typeof link?.href === 'string' ? link.href : ''
-      return (
-        href === '/about' || href.endsWith('/about') || link?.name === '关于我'
-      )
-    })
     const hasCategory = customLinks.some(link =>
       link?.href?.startsWith('/category')
     )
@@ -83,14 +71,6 @@ export const MenuList = ({ customNav, customMenu, categoryOptions }) => {
         icon: 'fas fa-house',
         name: locale.NAV.INDEX,
         href: '/',
-        show: true
-      })
-    }
-    if (!hasAbout) {
-      links.push({
-        icon: 'fas fa-user-astronaut',
-        name: locale.NAV.ABOUT,
-        href: '/about',
         show: true
       })
     }
