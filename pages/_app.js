@@ -83,7 +83,7 @@ const MyApp = ({ Component, pageProps }) => {
 
   const enableClerk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
   const content = (
-    <AppErrorBoundary>
+    <AppErrorBoundary key={route.asPath}>
       <GlobalContextProvider {...pageProps}>
         <GLayout {...pageProps}>
           <SEO {...pageProps} />
