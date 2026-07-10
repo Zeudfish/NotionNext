@@ -5,26 +5,20 @@ import { useEffect, useRef, useState } from 'react'
 
 /**
  * 目录导航组件
- * @param toc
- * @returns {JSX.Element}
- * @constructor
  */
 const Catalog = ({ post }) => {
   const { locale } = useGlobal()
-  // 目录自动滚动
   const tRef = useRef(null)
-  // 同步选中目录事件
   const [activeSection, setActiveSection] = useState(null)
 
-  // 监听滚动事件
   useEffect(() => {
-    const throttleMs = 200
     const actionSectionScrollSpy = throttle(() => {
       const sections = document.getElementsByClassName('notion-h')
       let prevBBox = null
-      let currentSectionId = activeSection
-      for (let i = 0; i < sections.length; ++i) {
-        const section = sections[i]
+      let currentSectionId = null
+
+      for (let index = 0; index < sections.length; index += 1) {
+        const section = sections[index]
         if (!section || !(section instanceof Element)) continue
         if (!currentSectionId) {
           currentSectionId = section.getAttribute('data-id')
@@ -39,50 +33,54 @@ const Catalog = ({ post }) => {
         }
         break
       }
-      setActiveSection(currentSectionId)
-      const index = post?.toc?.findIndex(
-        obj => uuidToId(obj.id) === currentSectionId
-      )
-      tRef?.current?.scrollTo({ top: 28 * index, behavior: 'smooth' })
-    }, throttleMs)
 
-    window.addEventListener('scroll', actionSectionScrollSpy, { passive: true })
+      setActiveSection(currentSectionId)
+      const tocIndex = post?.toc?.findIndex(
+        item => uuidToId(item.id) === currentSectionId
+      )
+      if (tocIndex >= 0) {
+        tRef.current?.scrollTo({ top: 28 * tocIndex, behavior: 'smooth' })
+      }
+    }, 200)
+
+    window.addEventListener('scroll', actionSectionScrollSpy, {
+      passive: true
+    })
     actionSectionScrollSpy()
     return () => {
       window.removeEventListener('scroll', actionSectionScrollSpy)
+      actionSectionScrollSpy.cancel()
     }
   }, [post])
 
-  // 无目录就直接返回空
-  if (!post || !post?.toc || post?.toc?.length < 1) {
-    return <></>
-  }
+  if (!post?.toc?.length) return null
 
   return (
-    <div className='px-3 '>
-      <div className='dark:text-white mb-2'>
-        <i className='mr-1 fas fa-stream' />
+    <div className='px-3'>
+      <div className='mb-3 font-semibold text-slate-800 dark:text-slate-100'>
+        <i className='fas fa-stream mr-2 text-blue-600' />
         {locale.COMMON.TABLE_OF_CONTENTS}
       </div>
 
       <div
-        className='overflow-y-auto overscroll-none max-h-36 lg:max-h-96 scroll-hidden'
+        className='scroll-hidden max-h-36 overflow-y-auto overscroll-none lg:max-h-96'
         ref={tRef}>
-        <nav className='h-full  text-black'>
-          {post?.toc?.map(tocItem => {
+        <nav className='h-full text-slate-700 dark:text-slate-300'>
+          {post.toc.map(tocItem => {
             const id = uuidToId(tocItem.id)
+            const isActive = activeSection === id
             return (
               <a
                 key={id}
                 href={`#${id}`}
-                className={`${activeSection === id && 'dark:border-white border-red-700 text-red-700 font-bold'} hover:font-semibold border-l pl-4 block hover:text-red-600 border-lduration-300 transform dark:text-red-400 dark:border-red-400
-                notion-table-of-contents-item-indent-level-${tocItem.indentLevel} catalog-item `}>
+                className={`${
+                  isActive
+                    ? 'border-blue-600 font-bold text-blue-700 dark:border-blue-300 dark:text-blue-300'
+                    : 'border-slate-200 dark:border-slate-700'
+                } catalog-item block border-l py-0.5 pl-4 transition duration-200 hover:border-orange-500 hover:text-orange-700 notion-table-of-contents-item-indent-level-${tocItem.indentLevel}`}>
                 <span
-                  style={{
-                    display: 'inline-block',
-                    marginLeft: tocItem.indentLevel * 16
-                  }}
-                  className={`truncate ${activeSection === id ? ' font-bold text-red-600 dark:text-white underline' : ''}`}>
+                  style={{ marginLeft: tocItem.indentLevel * 16 }}
+                  className='inline-block max-w-full truncate'>
                   {tocItem.text}
                 </span>
               </a>
