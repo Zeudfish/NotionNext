@@ -3,28 +3,22 @@ import { BlogItem } from './BlogItem'
 
 const TOPICS = [
   {
-    title: 'Low-level Vision',
-    description: 'RAW 降噪、ISP、图像与视频复原',
-    href: '/tag/%E9%99%8D%E5%99%AA',
-    icon: 'fas fa-camera-retro'
+    title: '论文笔记',
+    description: '读过的论文、方法理解与实验判断',
+    href: '/category/%E8%AE%BA%E6%96%87%E5%AF%BC%E8%AF%BB',
+    icon: 'fas fa-book-open'
   },
   {
-    title: '端侧部署',
-    description: '量化、蒸馏与芯片算子约束',
-    href: '/tag/%E9%87%8F%E5%8C%96',
-    icon: 'fas fa-microchip'
-  },
-  {
-    title: 'VLM / LLM',
-    description: '多模态模型、评测与真实用户体验',
-    href: '/tag/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD',
-    icon: 'fas fa-diagram-project'
-  },
-  {
-    title: '科研方法',
-    description: '读论文、做实验与写作过程中的判断',
+    title: '技术与工程',
+    description: '模型、部署和实际项目里的问题',
     href: '/category/%E6%8A%80%E6%9C%AF%E5%88%86%E4%BA%AB',
-    icon: 'fas fa-flask'
+    icon: 'fas fa-screwdriver-wrench'
+  },
+  {
+    title: '随笔与思考',
+    description: '工作、科研和 AI 之外的一些记录',
+    href: '/category/%E5%BF%83%E6%83%85%E9%9A%8F%E7%AC%94',
+    icon: 'fas fa-pen-nib'
   }
 ]
 
@@ -39,19 +33,35 @@ const SectionHeading = ({ eyebrow, title, action }) => (
 )
 
 export default function HomeOverview({ posts = [] }) {
-  const taggedFeatured = posts.filter(post => post?.tags?.includes('推荐'))
+  const allPosts = Array.isArray(posts)
+    ? posts
+        .filter(
+          post =>
+            post &&
+            typeof post === 'object' &&
+            typeof post.href === 'string' &&
+            post.href &&
+            typeof post.title === 'string' &&
+            post.title
+        )
+        .map(post => ({
+          ...post,
+          tags: Array.isArray(post.tags) ? post.tags : []
+        }))
+    : []
+  const taggedFeatured = allPosts.filter(post => post.tags.includes('推荐'))
   const featuredPosts = (
-    taggedFeatured.length >= 3 ? taggedFeatured : posts
+    taggedFeatured.length >= 3 ? taggedFeatured : allPosts
   ).slice(0, 3)
   const featuredIds = new Set(featuredPosts.map(post => post.id))
-  const recentPosts = posts
+  const recentPosts = allPosts
     .filter(post => !featuredIds.has(post.id))
     .slice(0, 8)
 
   return (
     <div className='zeurd-home-overview w-full pb-16'>
       <section className='zeurd-topic-section'>
-        <SectionHeading eyebrow='Explore' title='从研究方向开始' />
+        <SectionHeading eyebrow='Notes' title='这里主要写什么' />
         <div className='zeurd-topic-grid'>
           {TOPICS.map(topic => (
             <SmartLink
@@ -168,7 +178,7 @@ export default function HomeOverview({ posts = [] }) {
 
         .zeurd-topic-grid {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 0.85rem;
         }
 
@@ -363,7 +373,6 @@ export default function HomeOverview({ posts = [] }) {
         }
 
         @media (max-width: 1024px) {
-          .zeurd-topic-grid,
           .zeurd-featured-grid,
           .zeurd-recent-list {
             grid-template-columns: repeat(2, minmax(0, 1fr));
