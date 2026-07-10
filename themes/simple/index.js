@@ -214,12 +214,21 @@ const LayoutSlug = props => {
 
       {!lock && post && (
         <div
-          className={`px-2 ${fullWidth ? '' : 'xl:max-w-4xl 2xl:max-w-6xl'}`}>
+          className={`px-2 ${
+            fullWidth
+              ? ''
+              : 'zeurd-article-page xl:max-w-4xl 2xl:max-w-6xl'
+          }`}>
           <ArticleBackButton post={post} />
-          <ArticleInfo post={post} />
-          <WWAds orientation='horizontal' className='w-full' />
 
-          <div id='article-wrapper'>{!lock && <NotionPage post={post} />}</div>
+          <article className={fullWidth ? '' : 'zeurd-reading-surface'}>
+            <ArticleInfo post={post} />
+            <WWAds orientation='horizontal' className='w-full' />
+
+            <div id='article-wrapper'>
+              {!lock && <NotionPage post={post} />}
+            </div>
+          </article>
 
           <ShareBar post={post} />
           <AdSlot type='in-article' />
