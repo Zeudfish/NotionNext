@@ -57,10 +57,10 @@ const backButtonClassName =
   'mb-6 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-500 hover:shadow-md dark:border-gray-700 dark:bg-black dark:text-gray-300 dark:hover:border-blue-500 dark:hover:text-blue-300'
 
 const HomeBackButton = () => (
-  <SmartLink href='/' className={backButtonClassName} aria-label='返回首页'>
+  <a href='/' className={backButtonClassName} aria-label='返回首页'>
     <i className='fas fa-home' />
     <span>返回首页</span>
-  </SmartLink>
+  </a>
 )
 
 const ArticleBackButton = ({ post }) => {
