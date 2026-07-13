@@ -6,22 +6,35 @@ import { useEffect, useRef, useState } from 'react'
  * 音乐播放器
  * @returns
  */
-const Player = () => {
+const Player = ({ NOTION_CONFIG }) => {
   const [player, setPlayer] = useState()
   const ref = useRef(null)
-  const lrcType = JSON.parse(siteConfig('MUSIC_PLAYER_LRC_TYPE'))
-  const playerVisible = JSON.parse(siteConfig('MUSIC_PLAYER_VISIBLE'))
-  const autoPlay = JSON.parse(siteConfig('MUSIC_PLAYER_AUTO_PLAY'))
-  const meting = JSON.parse(siteConfig('MUSIC_PLAYER_METING'))
-  const order = siteConfig('MUSIC_PLAYER_ORDER')
-  const audio = siteConfig('MUSIC_PLAYER_AUDIO_LIST')
+  const lrcType = JSON.parse(
+    siteConfig('MUSIC_PLAYER_LRC_TYPE', null, NOTION_CONFIG)
+  )
+  const playerVisible = JSON.parse(
+    siteConfig('MUSIC_PLAYER_VISIBLE', null, NOTION_CONFIG)
+  )
+  const autoPlay = JSON.parse(
+    siteConfig('MUSIC_PLAYER_AUTO_PLAY', null, NOTION_CONFIG)
+  )
+  const meting = JSON.parse(
+    siteConfig('MUSIC_PLAYER_METING', null, NOTION_CONFIG)
+  )
+  const order = siteConfig('MUSIC_PLAYER_ORDER', null, NOTION_CONFIG)
+  const audio = siteConfig('MUSIC_PLAYER_AUDIO_LIST', null, NOTION_CONFIG)
 
-  const musicPlayerEnable = siteConfig('MUSIC_PLAYER')
-  const musicPlayerCDN = siteConfig('MUSIC_PLAYER_CDN_URL')
-  const musicMetingEnable = siteConfig('MUSIC_PLAYER_METING')
+  const musicPlayerEnable = siteConfig('MUSIC_PLAYER', null, NOTION_CONFIG)
+  const musicPlayerCDN = siteConfig('MUSIC_PLAYER_CDN_URL', null, NOTION_CONFIG)
+  const musicMetingEnable = siteConfig(
+    'MUSIC_PLAYER_METING',
+    null,
+    NOTION_CONFIG
+  )
   const musicMetingCDNUrl = siteConfig(
     'MUSIC_PLAYER_METING_CDN_URL',
-    'https://cdnjs.cloudflare.com/ajax/libs/meting/2.0.1/Meting.min.js'
+    'https://cdnjs.cloudflare.com/ajax/libs/meting/2.0.1/Meting.min.js',
+    NOTION_CONFIG
   )
 
   const initMusicPlayer = async () => {
@@ -73,12 +86,13 @@ const Player = () => {
           preload='auto'
           api={siteConfig(
             'MUSIC_PLAYER_METING_API',
-            'https://api.i-meto.com/meting/api?server=:server&type=:type&id=:id&r=:r'
+            'https://api.i-meto.com/meting/api?server=:server&type=:type&id=:id&r=:r',
+            NOTION_CONFIG
           )}
           autoplay={autoPlay}
-          order={siteConfig('MUSIC_PLAYER_ORDER')}
-          server={siteConfig('MUSIC_PLAYER_METING_SERVER')}
-          id={siteConfig('MUSIC_PLAYER_METING_ID')}
+          order={siteConfig('MUSIC_PLAYER_ORDER', null, NOTION_CONFIG)}
+          server={siteConfig('MUSIC_PLAYER_METING_SERVER', null, NOTION_CONFIG)}
+          id={siteConfig('MUSIC_PLAYER_METING_ID', null, NOTION_CONFIG)}
         />
       ) : (
         <div ref={ref} data-player={player} />
