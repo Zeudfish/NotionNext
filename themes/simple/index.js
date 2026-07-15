@@ -83,7 +83,7 @@ const ThemeGlobalSimple = createContext()
 export const useSimpleGlobal = () => useContext(ThemeGlobalSimple)
 
 const LayoutBase = props => {
-  const { children, slotTop } = props
+  const { children, slotTop, post } = props
   const { onLoading, fullWidth } = useGlobal()
   const router = useRouter()
   const searchModal = useRef(null)
@@ -129,7 +129,9 @@ const LayoutBase = props => {
           {showRightSidebar && (
             <div
               id='right-sidebar'
-              className='sticky top-8 hidden w-96 flex-none border-l border-gray-100 pl-12 dark:border-gray-800 xl:block'>
+              className={`sticky top-8 hidden flex-none border-l border-gray-100 dark:border-gray-800 xl:block ${
+                post ? 'w-60 pl-8' : 'w-96 pl-12'
+              }`}>
               <SideBar {...props} />
             </div>
           )}
