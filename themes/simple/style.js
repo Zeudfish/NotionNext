@@ -38,7 +38,7 @@ const Style = () => {
   /* 文章页：保留站点的暖色氛围，同时给长文一个稳定的阅读平面 */
   #theme-simple .zeurd-article-page {
     width: 100%;
-    max-width: 50rem;
+    max-width: 46rem;
     margin-right: auto;
     margin-left: auto;
   }
