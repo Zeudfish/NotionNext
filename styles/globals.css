@@ -298,3 +298,18 @@ img {
   @keyframes l1 {
   0% {background-position: right}
 }
+
+/* 桌面端音乐播放器：收起时多露出一点封面 */
+@media (min-width: 768px) {
+  .aplayer.aplayer-fixed.aplayer-narrow {
+    width: 96px !important;
+  }
+
+  .aplayer.aplayer-fixed.aplayer-narrow .aplayer-body {
+    width: 78px !important;
+  }
+
+  .aplayer.aplayer-fixed.aplayer-narrow .aplayer-pic {
+    width: 78px !important;
+  }
+}
