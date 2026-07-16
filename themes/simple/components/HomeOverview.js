@@ -15,6 +15,12 @@ const TOPICS = [
     icon: 'fas fa-screwdriver-wrench'
   },
   {
+    title: '金融思考',
+    description: '市场、公司和投资逻辑里的个人判断',
+    href: '/category/%E9%87%91%E8%9E%8D%E6%80%9D%E8%80%83',
+    icon: 'fas fa-chart-line'
+  },
+  {
     title: '随笔与思考',
     description: '工作、科研和 AI 之外的一些记录',
     href: '/category/%E5%BF%83%E6%83%85%E9%9A%8F%E7%AC%94',
@@ -178,7 +184,7 @@ export default function HomeOverview({ posts = [] }) {
 
         .zeurd-topic-grid {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 0.85rem;
         }
 
@@ -373,6 +379,7 @@ export default function HomeOverview({ posts = [] }) {
         }
 
         @media (max-width: 1024px) {
+          .zeurd-topic-grid,
           .zeurd-featured-grid,
           .zeurd-recent-list {
             grid-template-columns: repeat(2, minmax(0, 1fr));
