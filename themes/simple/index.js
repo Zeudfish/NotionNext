@@ -5,6 +5,7 @@ import SmartLink from '@/components/SmartLink'
 import { siteConfig } from '@/lib/config'
 import { useGlobal } from '@/lib/global'
 import { isBrowser } from '@/lib/utils'
+import { Transition } from '@headlessui/react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
 import { createContext, useContext, useEffect, useRef } from 'react'
@@ -109,8 +110,19 @@ const LayoutBase = props => {
               : ''
           } mx-auto flex w-full max-w-9/10 flex-1 items-start pt-12`}>
           <div id='container-inner' className='min-h-fit w-full flex-grow'>
-            {slotTop}
-            {children}
+            <Transition
+              show={!onLoading}
+              appear
+              enter='transition-opacity ease-out duration-200'
+              enterFrom='opacity-0'
+              enterTo='opacity-100'
+              leave='transition-opacity ease-in duration-150'
+              leaveFrom='opacity-100'
+              leaveTo='opacity-0'
+              unmount={false}>
+              {slotTop}
+              {children}
+            </Transition>
             <AdSlot type='native' />
           </div>
 
