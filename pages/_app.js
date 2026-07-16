@@ -75,6 +75,17 @@ const MyApp = ({ Component, pageProps }) => {
   }, [queryTheme, notionTheme, configTheme])
 
   useEffect(() => {
+    route.beforePopState(({ as }) => {
+      window.location.replace(as)
+      return false
+    })
+
+    return () => {
+      route.beforePopState(() => true)
+    }
+  }, [route])
+
+  useEffect(() => {
     const source = queryTheme
       ? 'url:theme'
       : notionTheme
