@@ -67,7 +67,6 @@ export default function HomeOverview({ posts = [] }) {
   return (
     <div className='zeurd-home-overview w-full pb-16'>
       <section className='zeurd-topic-section'>
-        <SectionHeading eyebrow='Notes' title='这里主要写什么' />
         <div className='zeurd-topic-grid'>
           {TOPICS.map(topic => (
             <SmartLink
