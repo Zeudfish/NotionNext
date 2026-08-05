@@ -2,9 +2,8 @@
 
 const BLOG = {
   API_BASE_URL: process.env.API_BASE_URL || 'https://www.notion.so/api/v3', // API默认请求地址,可以配置成自己的地址例如：https://[xxxxx].notion.site/api/v3
-  // Zeurd 博客数据库；环境变量不可用时也不再回退到 NotionNext 官方示例站
-  NOTION_PAGE_ID:
-    process.env.NOTION_PAGE_ID || '774104f9eb3c497e91994f6807887aa8',
+  // Zeurd 博客固定使用自己的 Notion 数据库，避免部署环境中的错误变量切换到官方示例站
+  NOTION_PAGE_ID: '774104f9eb3c497e91994f6807887aa8',
   THEME: process.env.NEXT_PUBLIC_THEME || 'simple', // 当前主题，在themes文件夹下可找到所有支持的主题；主题名称就是文件夹名，例如 claude,endspace,example,fukasawa,fuwari,gitbook,heo,hexo,landing,matery,medium,next,nobelium,plog,simple
   LANG: process.env.NEXT_PUBLIC_LANG || 'zh-CN', // e.g 'zh-CN','en-US'  see /lib/lang.js for more.
   SINCE: process.env.NEXT_PUBLIC_SINCE || 2021, // e.g if leave this empty, current year will be used.
