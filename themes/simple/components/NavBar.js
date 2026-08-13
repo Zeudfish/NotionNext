@@ -31,17 +31,16 @@ export default function NavBar(props) {
   }
 
   return (
-    <nav className='relative z-20 w-full border-t border-gray-100 bg-white shadow dark:border-hexo-black-gray dark:bg-black md:pt-0'>
+    <nav className='relative z-20 w-full border-t border-gray-100 bg-white dark:border-hexo-black-gray dark:bg-black md:pt-0'>
       <div
         id='nav-bar-inner'
         className='mx-auto flex h-14 max-w-9/10 items-center gap-5 text-sm md:text-base'>
         {!showSearchInput && (
           <SmartLink
             href='/'
-            className='hidden shrink-0 items-center gap-2 font-serif text-lg font-extrabold tracking-tight text-slate-900 no-underline transition hover:text-blue-600 dark:text-slate-100 md:inline-flex'
+            className='hidden h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 font-serif text-xl font-extrabold tracking-tight text-slate-900 no-underline transition hover:border-blue-300 hover:text-blue-600 dark:border-slate-700 dark:text-slate-100 md:inline-flex'
             aria-label='返回 Zeurd 首页'>
-            <span className='h-2 w-2 rounded-full bg-gradient-to-br from-blue-600 to-orange-600' />
-            Zeurd
+            Z
           </SmartLink>
         )}
 
@@ -66,7 +65,7 @@ export default function NavBar(props) {
         <button
           type='button'
           onClick={toggleShowSearchInput}
-          className='grid h-9 w-9 shrink-0 place-items-center rounded-full text-blue-500 transition hover:bg-blue-50 hover:text-orange-700 dark:hover:bg-slate-900'
+          className='grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-blue-300'
           aria-label={showSearchInput ? '关闭搜索' : '搜索文章'}>
           <i
             className={
