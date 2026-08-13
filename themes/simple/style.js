@@ -188,25 +188,26 @@ const Style = () => {
     }
   }
   
-  
-  /*  菜单下划线动画 */
+  /* 菜单下划线动画：与首页蓝色视觉统一 */
   #theme-simple .menu-link {
       text-decoration: none;
-      background-image: linear-gradient(#dd3333, #dd3333);
+      background-image: linear-gradient(#2563eb, #2563eb);
       background-repeat: no-repeat;
       background-position: bottom center;
       background-size: 0 2px;
-      transition: background-size 100ms ease-in-out;
+      transition: background-size 120ms ease-in-out, color 120ms ease-in-out;
   }
    
   #theme-simple .menu-link:hover {
       background-size: 100% 2px;
-      color: #dd3333;
+      color: #2563eb;
       cursor: pointer;
   }
-  
-  
 
+  .dark #theme-simple .menu-link:hover {
+      color: #60a5fa;
+  }
+  
   `}</style>
 }
 
