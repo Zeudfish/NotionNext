@@ -14,6 +14,8 @@ module.exports = {
     '/404',
     '/api/*',
     '/archive',
+    '/category',
+    '/category/*',
     '/feed',
     '/rss/*',
     '/search',
