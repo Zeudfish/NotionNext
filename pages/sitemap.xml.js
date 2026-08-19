@@ -4,7 +4,7 @@ import { siteConfig } from '@/lib/config'
 import { fetchGlobalAllData } from '@/lib/db/SiteDataApi'
 import {
   getCanonicalPathForPage,
-  getPublishedCategoryNames,
+  getIndexableCategoryNames,
   isIndexableContentPage
 } from '@/lib/site/publication'
 import {
@@ -76,7 +76,7 @@ function generateLocalesSitemap(link, allPages = [], locale) {
     }))
   ].filter(field => Boolean(field?.loc))
 
-  const categoryFields = getPublishedCategoryNames(allPages)
+  const categoryFields = getIndexableCategoryNames(allPages)
     .map(category => ({
       loc: buildSitemapLoc({
         baseUrl: normalizedLink,
