@@ -17,6 +17,7 @@ import ErrorHandler from '@/lib/utils/errorHandler'
 // 各种扩展插件 这个要阻塞引入
 import BLOG from '@/blog.config'
 import ExternalPlugins from '@/components/ExternalPlugins'
+import IndexingPolicy from '@/components/IndexingPolicy'
 import SEO from '@/components/SEO'
 import { zhCN } from '@clerk/localizations'
 import dynamic from 'next/dynamic'
@@ -112,6 +113,7 @@ const MyApp = ({ Component, pageProps }) => {
       <GlobalContextProvider {...pageProps}>
         <GLayout {...pageProps}>
           <SEO {...pageProps} />
+          <IndexingPolicy {...pageProps} />
           <Component {...pageProps} />
         </GLayout>
         <ExternalPlugins {...pageProps} />
