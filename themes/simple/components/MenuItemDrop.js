@@ -99,6 +99,15 @@ export const MenuItemDrop = ({ link }) => {
     changeShow(false)
   }
 
+  const toggleMenuFromClick = () => {
+    if (openedByHoverRef.current) {
+      openedByHoverRef.current = false
+      changeShow(true)
+      return
+    }
+    changeShow(current => !current)
+  }
+
   return (
     <div
       ref={containerRef}
@@ -139,10 +148,7 @@ export const MenuItemDrop = ({ link }) => {
           aria-haspopup='menu'
           aria-expanded={show}
           aria-controls={menuId}
-          onClick={() => {
-            openedByHoverRef.current = false
-            changeShow(current => !current)
-          }}
+          onClick={toggleMenuFromClick}
           onKeyDown={handleTriggerKeyDown}>
           {link.icon && <i className={link.icon} aria-hidden='true' />}
           <span>{link.name}</span>

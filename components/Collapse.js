@@ -10,13 +10,19 @@ const Collapse = ({
 }) => {
   const ref = useRef(null)
   const dimension = type === 'horizontal' ? 'width' : 'height'
-  const scrollDimension = type === 'horizontal' ? 'scrollWidth' : 'scrollHeight'
+
+  const getExpandedSize = element =>
+    type === 'horizontal' ? element.scrollWidth : element.scrollHeight
+
+  const setExpandedSize = element => {
+    element.style[dimension] = String(getExpandedSize(element)) + 'px'
+  }
 
   const updateExpandedSize = () => {
     const element = ref.current
     if (!element || !isOpen) return
 
-    element.style[dimension] = `${element[scrollDimension]}px`
+    setExpandedSize(element)
     window.requestAnimationFrame(() => {
       if (ref.current && isOpen) ref.current.style[dimension] = 'auto'
     })
@@ -32,13 +38,13 @@ const Collapse = ({
 
     let timer
     if (isOpen) {
-      element.style[dimension] = `${element[scrollDimension]}px`
+      setExpandedSize(element)
       timer = window.setTimeout(() => {
         if (ref.current && isOpen) ref.current.style[dimension] = 'auto'
       }, 320)
     } else {
       if (element.style[dimension] === 'auto') {
-        element.style[dimension] = `${element[scrollDimension]}px`
+        setExpandedSize(element)
       }
       element.getBoundingClientRect()
       element.style[dimension] = '0px'
@@ -50,7 +56,7 @@ const Collapse = ({
     })
 
     return () => window.clearTimeout(timer)
-  }, [dimension, isOpen, onHeightChange, scrollDimension])
+  }, [dimension, isOpen, onHeightChange, type])
 
   return (
     <div
