@@ -10,6 +10,7 @@ const BLOCKED_QUERY_KEYS = new Set([
   'gclid',
   'fbclid'
 ])
+const DIRECT_LINK_PROTOCOL = /^(?:mailto:|tel:|sms:)/i
 
 const isBlockedQueryKey = key =>
   BLOCKED_QUERY_KEYS.has(String(key || '').toLowerCase()) ||
@@ -123,6 +124,14 @@ const SmartLink = ({ href, children, preserveQuery = false, ...rest }) => {
         ? href.pathname
         : ''
 
+  if (DIRECT_LINK_PROTOCOL.test(urlString)) {
+    return (
+      <a href={urlString} {...filterDOMProps(rest)}>
+        {children}
+      </a>
+    )
+  }
+
   const isAbsolute = /^https?:\/\//i.test(urlString)
   const siteOrigin = getSiteOrigin(siteLink)
   let isExternal = false
@@ -138,10 +147,10 @@ const SmartLink = ({ href, children, preserveQuery = false, ...rest }) => {
   if (isExternal) {
     return (
       <a
+        {...filterDOMProps(rest)}
         href={urlString}
         target='_blank'
-        rel='noopener noreferrer'
-        {...filterDOMProps(rest)}>
+        rel='noopener noreferrer'>
         {children}
       </a>
     )

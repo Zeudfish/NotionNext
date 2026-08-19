@@ -46,7 +46,7 @@ const BaseStyle = () => <style jsx global>{`
       --z-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
       --z-shadow-hover: 0 24px 64px rgba(0, 0, 0, 0.34);
       background:
-        radial-gradient(circle at 14% 3%, rgba(37, 99, 235, 0.16), transparent 25rem),
+        radial-gradient(circle at 14% 3%, rgba(37, 99, 246, 0.16), transparent 25rem),
         var(--z-bg);
     }
 
@@ -56,7 +56,7 @@ const BaseStyle = () => <style jsx global>{`
     #theme-simple a { color: inherit; }
     #theme-simple img, #theme-simple video, #theme-simple iframe { max-width: 100%; }
     #theme-simple button, #theme-simple input { font: inherit; }
-    #theme-simple .zeurd-control, #theme-simple button, #theme-simple [role='button'] { min-width: 44px; min-height: 44px; }
+    #theme-simple .zeurd-control { min-width: 44px; min-height: 44px; }
     #theme-simple :focus-visible { outline: 3px solid var(--z-blue); outline-offset: 3px; }
     #theme-simple #main-content:focus { outline: none; }
     .notion { margin-top: 0 !important; margin-bottom: 0 !important; }

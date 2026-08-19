@@ -4,14 +4,17 @@ const toHeadingId = value =>
   `archive-${String(value || '')
     .trim()
     .replace(/[^a-z0-9_-]+/gi, '-')
-    .replace(/^-+|-+$/g, '')}`
+    .replace(/^-+|-+$/g, '')}-heading`
 
 export default function BlogArchiveItem({ archiveTitle, archivePosts }) {
   const posts = archivePosts?.[archiveTitle] || []
   const headingId = toHeadingId(archiveTitle)
 
   return (
-    <section className='zeurd-archive-group' aria-labelledby={headingId}>
+    <section
+      id={String(archiveTitle)}
+      className='zeurd-archive-group'
+      aria-labelledby={headingId}>
       <h2 id={headingId}>{archiveTitle}</h2>
       <ul>
         {posts.map(post => (

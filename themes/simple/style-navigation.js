@@ -1,6 +1,7 @@
 /* eslint-disable react/no-unknown-property */
 const NavigationStyle = () => <style jsx global>{`#theme-simple .zeurd-navbar {
       position: sticky; top: 0; z-index: 50; width: 100%; border-bottom: 1px solid var(--z-border);
+      background: var(--z-surface-strong);
       background: color-mix(in srgb, var(--z-surface-strong) 88%, transparent);
       box-shadow: 0 8px 28px rgba(15, 23, 42, .04); backdrop-filter: blur(14px);
     }
