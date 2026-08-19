@@ -249,32 +249,41 @@ const LayoutSlug = props => {
   )
 }
 
-const Layout404 = props => {
-  const { post } = props
-  const router = useRouter()
-  const waiting404 = siteConfig('POST_WAITING_TIME_FOR_404') * 1000
-
-  useEffect(() => {
-    if (post) return
-
-    const timeoutId = setTimeout(() => {
-      if (isBrowser) {
-        const article = document.querySelector(
-          '#article-wrapper #notion-article'
-        )
-        if (!article) {
-          router.push('/404').then(() => {
-            console.warn('找不到页面', router.asPath)
-          })
-        }
-      }
-    }, waiting404)
-
-    return () => clearTimeout(timeoutId)
-  }, [post, router, waiting404])
-
-  return <>404 Not found.</>
-}
+const Layout404 = () => (
+  <section className='mx-auto flex min-h-[55vh] max-w-2xl flex-col items-center justify-center px-6 text-center'>
+    <div className='text-sm font-bold uppercase tracking-[0.25em] text-blue-500'>
+      Error 404
+    </div>
+    <h1 className='mt-4 text-3xl font-bold text-gray-900 dark:text-gray-100 md:text-4xl'>
+      这篇内容可能被移动或删除了
+    </h1>
+    <p className='mt-4 leading-7 text-gray-500 dark:text-gray-400'>
+      页面不会自动跳转。可以回到首页，或从主要内容分类继续浏览。
+    </p>
+    <div className='mt-8 flex flex-wrap justify-center gap-3'>
+      <SmartLink href='/' className={backButtonClassName}>
+        <i className='fas fa-home' />
+        <span>回到首页</span>
+      </SmartLink>
+      <SmartLink href='/search' className={backButtonClassName}>
+        <i className='fas fa-search' />
+        <span>搜索文章</span>
+      </SmartLink>
+      <SmartLink
+        href='/category/%E8%AE%BA%E6%96%87%E5%AF%BC%E8%AF%BB'
+        className={backButtonClassName}>
+        <i className='fas fa-book-open' />
+        <span>论文导读</span>
+      </SmartLink>
+      <SmartLink
+        href='/category/%E6%8A%80%E6%9C%AF%E5%88%86%E4%BA%AB'
+        className={backButtonClassName}>
+        <i className='fas fa-screwdriver-wrench' />
+        <span>技术分享</span>
+      </SmartLink>
+    </div>
+  </section>
+)
 
 const LayoutCategoryIndex = props => {
   const { categoryOptions } = props
