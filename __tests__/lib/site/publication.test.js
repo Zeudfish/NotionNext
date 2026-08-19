@@ -1,5 +1,7 @@
 import {
   getCanonicalPathForPage,
+  getCategoryIntroduction,
+  getIndexableCategoryNames,
   getPublishedCategoryNames,
   isIndexableContentPage,
   isPublishedContentPage,
@@ -67,5 +69,16 @@ describe('publication policy', () => {
         { type: 'Page', status: 'Published', category: '论文导读' }
       ])
     ).toEqual(['技术分享'])
+  })
+
+  it('indexes categories only when a visible introduction is configured', () => {
+    const pages = [
+      { type: 'Post', status: 'Published', category: '技术分享' },
+      { type: 'Post', status: 'Published', category: '未知分类' }
+    ]
+
+    expect(getCategoryIntroduction('技术分享')).toContain('工程落地')
+    expect(getCategoryIntroduction('未知分类')).toBe('')
+    expect(getIndexableCategoryNames(pages)).toEqual(['技术分享'])
   })
 })
