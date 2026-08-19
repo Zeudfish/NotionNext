@@ -38,7 +38,6 @@ export const getServerSideProps = async ctx => {
     const localeFields = generateLocalesSitemap(
       link,
       siteData.allPages,
-      siteData.categoryOptions,
       locale
     )
     fields = fields.concat(localeFields)
@@ -53,7 +52,7 @@ export const getServerSideProps = async ctx => {
   return getServerSideSitemap(ctx, fields)
 }
 
-function generateLocalesSitemap(link, allPages = [], categoryOptions, locale) {
+function generateLocalesSitemap(link, allPages = [], locale) {
   const normalizedLink = normalizeSitemapBaseUrl(link)
   const normalizedLocale = normalizeSitemapLocale(locale)
   const dateNow = toSitemapDateString(new Date())
@@ -77,20 +76,7 @@ function generateLocalesSitemap(link, allPages = [], categoryOptions, locale) {
     }))
   ].filter(field => Boolean(field?.loc))
 
-  const populatedCategories = new Set(
-    (categoryOptions || [])
-      .filter(category => Number(category?.count || 0) > 0)
-      .map(category => category?.name)
-      .filter(Boolean)
-  )
-
-  if (populatedCategories.size === 0) {
-    getPublishedCategoryNames(allPages).forEach(category => {
-      populatedCategories.add(category)
-    })
-  }
-
-  const categoryFields = Array.from(populatedCategories)
+  const categoryFields = getPublishedCategoryNames(allPages)
     .map(category => ({
       loc: buildSitemapLoc({
         baseUrl: normalizedLink,
