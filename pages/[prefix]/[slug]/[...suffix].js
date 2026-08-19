@@ -5,6 +5,10 @@ import { getStaticPathsBase } from '@/lib/build/staticPaths'
 import { isExport } from '@/lib/utils/buildMode'
 import { checkSlugHasMorThanTwoSlash } from '@/lib/utils/post'
 import Slug from '..'
+import {
+  getLegacyUuidRedirect,
+  getPostVisibilityResult
+} from '@/lib/site/postRoute'
 
 const isStaticExport = process.env.EXPORT === 'true'
 
@@ -17,7 +21,6 @@ const isStaticExport = process.env.EXPORT === 'true'
 const PrefixSlug = props => {
   return <Slug {...props} />
 }
-
 
 export async function getStaticPaths() {
   return getStaticPathsBase({
@@ -42,24 +45,30 @@ export async function getStaticProps({
   params: { prefix, slug, suffix },
   locale
 }) {
+  const uuidRedirect = await getLegacyUuidRedirect({
+    segments: [prefix, slug, ...(suffix || [])],
+    locale
+  })
+  if (uuidRedirect) return { redirect: uuidRedirect }
 
   const props = await resolvePostProps({
     prefix,
     slug,
     suffix,
-    locale,
+    locale
   })
+  const visibilityResult = getPostVisibilityResult(props)
+  if (visibilityResult) return visibilityResult
 
   return {
     props,
     revalidate: isStaticExport
       ? undefined
       : siteConfig(
-        'NEXT_REVALIDATE_SECOND',
-        BLOG.NEXT_REVALIDATE_SECOND,
-        props.NOTION_CONFIG
-      ),
-    notFound: !props.post
+          'NEXT_REVALIDATE_SECOND',
+          BLOG.NEXT_REVALIDATE_SECOND,
+          props.NOTION_CONFIG
+        )
   }
 }
 
