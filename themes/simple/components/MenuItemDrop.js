@@ -6,6 +6,7 @@ export const MenuItemDrop = ({ link }) => {
   const containerRef = useRef(null)
   const triggerRef = useRef(null)
   const menuRef = useRef(null)
+  const openedByHoverRef = useRef(false)
   const reactId = useId()
   const menuId = `simple-menu-${reactId.replace(/:/g, '')}`
   const hasSubMenu = link?.subMenus?.length > 0
@@ -15,11 +16,13 @@ export const MenuItemDrop = ({ link }) => {
 
     const handlePointerDown = event => {
       if (!containerRef.current?.contains(event.target)) {
+        openedByHoverRef.current = false
         changeShow(false)
       }
     }
     const handleEscape = event => {
       if (event.key === 'Escape') {
+        openedByHoverRef.current = false
         changeShow(false)
         triggerRef.current?.focus()
       }
@@ -48,8 +51,18 @@ export const MenuItemDrop = ({ link }) => {
   }
 
   const openAndFocus = index => {
+    openedByHoverRef.current = false
     changeShow(true)
     requestAnimationFrame(() => focusMenuItem(index))
+  }
+
+  const handleTriggerClick = () => {
+    if (openedByHoverRef.current) {
+      openedByHoverRef.current = false
+      changeShow(true)
+      return
+    }
+    changeShow(current => !current)
   }
 
   const handleTriggerKeyDown = event => {
@@ -61,6 +74,7 @@ export const MenuItemDrop = ({ link }) => {
       openAndFocus(-1)
     } else if (event.key === 'Escape') {
       event.preventDefault()
+      openedByHoverRef.current = false
       changeShow(false)
     }
   }
@@ -83,13 +97,25 @@ export const MenuItemDrop = ({ link }) => {
       focusMenuItem(items.length - 1)
     } else if (event.key === 'Escape') {
       event.preventDefault()
+      openedByHoverRef.current = false
       changeShow(false)
       triggerRef.current?.focus()
     }
   }
 
+  const handleMouseEnter = () => {
+    if (!show) {
+      openedByHoverRef.current = true
+      changeShow(true)
+    }
+  }
+
   const handleMouseLeave = () => {
-    if (!containerRef.current?.contains(document.activeElement)) {
+    if (
+      openedByHoverRef.current &&
+      !containerRef.current?.contains(document.activeElement)
+    ) {
+      openedByHoverRef.current = false
       changeShow(false)
     }
   }
@@ -98,10 +124,11 @@ export const MenuItemDrop = ({ link }) => {
     <div
       ref={containerRef}
       className='relative'
-      onMouseEnter={() => changeShow(true)}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onBlur={event => {
         if (!event.currentTarget.contains(event.relatedTarget)) {
+          openedByHoverRef.current = false
           changeShow(false)
         }
       }}>
@@ -127,7 +154,7 @@ export const MenuItemDrop = ({ link }) => {
           aria-haspopup='menu'
           aria-expanded={show}
           aria-controls={menuId}
-          onClick={() => changeShow(current => !current)}
+          onClick={handleTriggerClick}
           onKeyDown={handleTriggerKeyDown}>
           {link?.icon && (
             <span className='mr-2'>
@@ -160,7 +187,10 @@ export const MenuItemDrop = ({ link }) => {
                 target={sLink?.target || link?.target}
                 role='menuitem'
                 tabIndex={show ? 0 : -1}
-                onClick={() => changeShow(false)}>
+                onClick={() => {
+                  openedByHoverRef.current = false
+                  changeShow(false)
+                }}>
                 <span className='text-sm text-nowrap'>
                   {sLink?.icon && <i className={sLink?.icon}> &nbsp; </i>}
                   {sLink.title}
