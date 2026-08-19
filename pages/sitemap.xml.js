@@ -3,6 +3,11 @@ import BLOG from '@/blog.config'
 import { siteConfig } from '@/lib/config'
 import { fetchGlobalAllData } from '@/lib/db/SiteDataApi'
 import {
+  getCanonicalPathForPage,
+  getPublishedCategoryNames,
+  isIndexableContentPage
+} from '@/lib/site/publication'
+import {
   buildSitemapLoc,
   normalizeSitemapBaseUrl,
   normalizeSitemapLocale,
@@ -10,6 +15,8 @@ import {
 } from '@/lib/sitemap-utils'
 import { extractLangId, extractLangPrefix } from '@/lib/utils/pageId'
 import { getServerSideSitemap } from 'next-sitemap'
+
+const EXPLICIT_PUBLIC_ROUTES = ['food']
 
 export const getServerSideProps = async ctx => {
   let fields = []
@@ -19,7 +26,6 @@ export const getServerSideProps = async ctx => {
     const siteId = siteIds[index]
     const id = extractLangId(siteId)
     const locale = extractLangPrefix(siteId)
-    // 第一个id站点默认语言
     const siteData = await fetchGlobalAllData({
       pageId: id,
       from: 'sitemap.xml'
@@ -29,13 +35,17 @@ export const getServerSideProps = async ctx => {
       siteData?.siteInfo?.link,
       siteData.NOTION_CONFIG
     )
-    const localeFields = generateLocalesSitemap(link, siteData.allPages, locale)
+    const localeFields = generateLocalesSitemap(
+      link,
+      siteData.allPages,
+      siteData.categoryOptions,
+      locale
+    )
     fields = fields.concat(localeFields)
   }
 
   fields = getUniqueFields(fields)
 
-  // 缓存
   ctx.res.setHeader(
     'Cache-Control',
     'public, max-age=3600, stale-while-revalidate=59'
@@ -43,7 +53,7 @@ export const getServerSideProps = async ctx => {
   return getServerSideSitemap(ctx, fields)
 }
 
-function generateLocalesSitemap(link, allPages, locale) {
+function generateLocalesSitemap(link, allPages = [], categoryOptions, locale) {
   const normalizedLink = normalizeSitemapBaseUrl(link)
   const normalizedLocale = normalizeSitemapLocale(locale)
   const dateNow = toSitemapDateString(new Date())
@@ -53,93 +63,70 @@ function generateLocalesSitemap(link, allPages, locale) {
       loc: buildSitemapLoc({ baseUrl: normalizedLink, locale: normalizedLocale }),
       lastmod: dateNow,
       changefreq: 'daily',
-      priority: '0.7'
+      priority: '0.8'
     },
-    {
+    ...EXPLICIT_PUBLIC_ROUTES.map(slug => ({
       loc: buildSitemapLoc({
         baseUrl: normalizedLink,
         locale: normalizedLocale,
-        slug: 'archive'
+        slug
       }),
       lastmod: dateNow,
-      changefreq: 'daily',
+      changefreq: 'weekly',
       priority: '0.7'
-    },
-    {
-      loc: buildSitemapLoc({
-        baseUrl: normalizedLink,
-        locale: normalizedLocale,
-        slug: 'category'
-      }),
-      lastmod: dateNow,
-      changefreq: 'daily',
-      priority: '0.7'
-    },
-    {
-      loc: buildSitemapLoc({
-        baseUrl: normalizedLink,
-        locale: normalizedLocale,
-        slug: 'food'
-      }),
-      lastmod: dateNow,
-      changefreq: 'daily',
-      priority: '0.7'
-    },
-    {
-      loc: buildSitemapLoc({
-        baseUrl: normalizedLink,
-        locale: normalizedLocale,
-        slug: 'rss/feed.xml'
-      }),
-      lastmod: dateNow,
-      changefreq: 'daily',
-      priority: '0.7'
-    },
-    {
-      loc: buildSitemapLoc({
-        baseUrl: normalizedLink,
-        locale: normalizedLocale,
-        slug: 'search'
-      }),
-      lastmod: dateNow,
-      changefreq: 'daily',
-      priority: '0.7'
-    },
-    {
-      loc: buildSitemapLoc({
-        baseUrl: normalizedLink,
-        locale: normalizedLocale,
-        slug: 'tag'
-      }),
-      lastmod: dateNow,
-      changefreq: 'daily',
-      priority: '0.7'
-    }
+    }))
   ].filter(field => Boolean(field?.loc))
 
-  const postFields =
-    allPages
-      ?.filter(p => p.status === BLOG.NOTION_PROPERTY_NAME.status_publish)
-      // 过滤掉外部链接(http开头)和锚点链接(#开头)
-      ?.filter(p => p.slug && !p.slug.startsWith('http') && !p.slug.startsWith('#'))
-      ?.map(post => {
-        const loc = buildSitemapLoc({
-          baseUrl: normalizedLink,
-          locale: normalizedLocale,
-          slug: post?.slug
-        })
-        if (!loc) return null
+  const populatedCategories = new Set(
+    (categoryOptions || [])
+      .filter(category => Number(category?.count || 0) > 0)
+      .map(category => category?.name)
+      .filter(Boolean)
+  )
 
-        return {
-          loc,
-          lastmod: toSitemapDateString(post?.publishDay, dateNow),
-          changefreq: 'daily',
-          priority: '0.7'
-        }
+  if (populatedCategories.size === 0) {
+    getPublishedCategoryNames(allPages).forEach(category => {
+      populatedCategories.add(category)
+    })
+  }
+
+  const categoryFields = Array.from(populatedCategories)
+    .map(category => ({
+      loc: buildSitemapLoc({
+        baseUrl: normalizedLink,
+        locale: normalizedLocale,
+        slug: `category/${encodeURIComponent(category)}`
+      }),
+      lastmod: dateNow,
+      changefreq: 'weekly',
+      priority: '0.6'
+    }))
+    .filter(field => Boolean(field?.loc))
+
+  const contentFields = allPages
+    .filter(isIndexableContentPage)
+    .map(page => {
+      const canonicalPath = getCanonicalPathForPage(page)
+      const loc = buildSitemapLoc({
+        baseUrl: normalizedLink,
+        locale: normalizedLocale,
+        slug: canonicalPath?.replace(/^\//, '')
       })
-      ?.filter(Boolean) ?? []
+      if (!loc) return null
 
-  return defaultFields.concat(postFields)
+      return {
+        loc,
+        lastmod: toSitemapDateString(
+          page?.lastEditedDay || page?.publishDay,
+          dateNow
+        ),
+        changefreq: 'weekly',
+        priority: page?.type === 'Post' ? '0.7' : '0.6'
+      }
+    })
+    .filter(Boolean)
+
+  return defaultFields.concat(categoryFields, contentFields)
 }
 
 function getUniqueFields(fields) {
@@ -148,7 +135,10 @@ function getUniqueFields(fields) {
   fields.forEach(field => {
     const existingField = uniqueFieldsMap.get(field.loc)
 
-    if (!existingField || new Date(field.lastmod) > new Date(existingField.lastmod)) {
+    if (
+      !existingField ||
+      new Date(field.lastmod) > new Date(existingField.lastmod)
+    ) {
       uniqueFieldsMap.set(field.loc, field)
     }
   })
@@ -156,4 +146,4 @@ function getUniqueFields(fields) {
   return Array.from(uniqueFieldsMap.values())
 }
 
-export default () => { }
+export default () => {}
