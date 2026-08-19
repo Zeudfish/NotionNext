@@ -5,6 +5,10 @@ import Slug from '..'
 import { getStaticPathsBase } from '@/lib/build/staticPaths'
 import { isExport } from '@/lib/utils/buildMode'
 import { checkSlugHasOneSlash } from '@/lib/utils/post'
+import {
+  getLegacyUuidRedirect,
+  getPostVisibilityResult
+} from '@/lib/site/postRoute'
 
 const isStaticExport = process.env.EXPORT === 'true'
 
@@ -32,22 +36,29 @@ export async function getStaticPaths() {
 }
 
 export async function getStaticProps({ params: { prefix, slug }, locale }) {
+  const uuidRedirect = await getLegacyUuidRedirect({
+    segments: [prefix, slug],
+    locale
+  })
+  if (uuidRedirect) return { redirect: uuidRedirect }
+
   const props = await resolvePostProps({
     prefix,
     slug,
-    locale,
+    locale
   })
+  const visibilityResult = getPostVisibilityResult(props)
+  if (visibilityResult) return visibilityResult
 
   return {
     props,
     revalidate: isStaticExport
       ? undefined
       : siteConfig(
-        'NEXT_REVALIDATE_SECOND',
-        BLOG.NEXT_REVALIDATE_SECOND,
-        props.NOTION_CONFIG
-      ),
-    notFound: !props.post
+          'NEXT_REVALIDATE_SECOND',
+          BLOG.NEXT_REVALIDATE_SECOND,
+          props.NOTION_CONFIG
+        )
   }
 }
 
