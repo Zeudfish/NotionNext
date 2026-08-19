@@ -1,19 +1,20 @@
-import Link from 'next/link'
 import { siteConfig } from '@/lib/config'
+import Link from 'next/link'
 
-// 过滤 <a> 标签不能识别的 props
+const QUERY_ALLOWLIST = new Set(['page', 'sort', 'filter'])
+
 const filterDOMProps = props => {
   const {
     passHref,
     legacyBehavior,
     placeholderSrc,
     fallbackSrc,
+    preserveQuery,
     ...rest
   } = props
   return rest
 }
 
-// 过滤不应该透传给 next/link 的非链接属性
 const filterLinkProps = props => {
   const {
     placeholderSrc,
@@ -26,78 +27,129 @@ const filterLinkProps = props => {
     decoding,
     onLoad,
     onError,
+    preserveQuery,
     ...rest
   } = props
   return rest
 }
 
-const SmartLink = ({ href, children, ...rest }) => {
-  const LINK = siteConfig('LINK')
-
-  // 获取 URL 字符串用于判断是否是外链
-  let urlString = ''
-
-  if (typeof href === 'string') {
-    urlString = href
-  } else if (
-    typeof href === 'object' &&
-    href !== null &&
-    typeof href.pathname === 'string'
-  ) {
-    urlString = href.pathname
+const getDynamicRouteKeys = pathname => {
+  const keys = new Set()
+  const pattern = /\[\[?(?:\.\.\.)?([^\]/]+)\]?\]/g
+  let match
+  while ((match = pattern.exec(pathname || '')) !== null) {
+    if (match[1]) keys.add(match[1])
   }
+  return keys
+}
 
-  const isExternal = urlString.startsWith('http') && !urlString.startsWith(LINK)
+const filterQueryObject = (query, pathname = '') => {
+  if (!query || typeof query !== 'object') return {}
+  const dynamicKeys = getDynamicRouteKeys(pathname)
+  const filtered = {}
 
-  const getPersistedQuery = () => {
-    if (typeof window === 'undefined') return {}
-    const queryString = window.location.search?.slice(1) || ''
-    const params = new URLSearchParams(queryString)
-    const preserved = {}
-    for (const [key, value] of params.entries()) {
-      if (value !== '') preserved[key] = value
+  Object.entries(query).forEach(([key, value]) => {
+    if ((QUERY_ALLOWLIST.has(key) || dynamicKeys.has(key)) && value !== '') {
+      filtered[key] = value
     }
-    return preserved
+  })
+
+  return filtered
+}
+
+const getCurrentAllowedQuery = () => {
+  if (typeof window === 'undefined') return {}
+  const params = new URLSearchParams(window.location.search || '')
+  const filtered = {}
+
+  params.forEach((value, key) => {
+    if (QUERY_ALLOWLIST.has(key) && value !== '') {
+      filtered[key] = value
+    }
+  })
+
+  return filtered
+}
+
+const getSiteOrigin = link => {
+  try {
+    return new URL(link).origin
+  } catch (error) {
+    return ''
+  }
+}
+
+const sanitizeStringHref = ({ href, siteLink, preserveQuery }) => {
+  if (!href || href.startsWith('#')) return href
+
+  const base = siteLink || 'https://notionnext.local'
+  let url
+  try {
+    url = new URL(href, base)
+  } catch (error) {
+    return href
   }
 
-  const mergePreservedQueryForStringHref = value => {
-    if (typeof value !== 'string' || !value || value.startsWith('#')) return value
-    const preservedQuery = getPersistedQuery()
-    if (Object.keys(preservedQuery).length === 0) return value
+  const allowedQuery = preserveQuery ? getCurrentAllowedQuery() : {}
+  const targetQuery = {}
+  url.searchParams.forEach((value, key) => {
+    if (QUERY_ALLOWLIST.has(key) && value !== '') {
+      targetQuery[key] = value
+    }
+  })
 
-    const isAbsolute = value.startsWith('http://') || value.startsWith('https://')
-    const url = new URL(value, LINK)
-    Object.entries(preservedQuery).forEach(([key, paramValue]) => {
-      if (!url.searchParams.has(key)) {
-        url.searchParams.set(key, paramValue)
-      }
-    })
+  url.search = ''
+  Object.entries({ ...allowedQuery, ...targetQuery }).forEach(([key, value]) => {
+    url.searchParams.set(key, value)
+  })
 
-    if (isAbsolute) return url.toString()
-    return `${url.pathname}${url.search}${url.hash}`
+  const isAbsolute = /^https?:\/\//i.test(href)
+  const siteOrigin = getSiteOrigin(siteLink)
+  if (isAbsolute && siteOrigin && url.origin !== siteOrigin) {
+    return href
   }
 
-  const mergePreservedQueryForObjectHref = value => {
-    if (!value || typeof value !== 'object') return value
-    const preservedQuery = getPersistedQuery()
-    if (Object.keys(preservedQuery).length === 0) return value
-    return {
-      ...value,
-      query: {
-        ...preservedQuery,
-        ...(value.query || {})
-      }
+  return `${url.pathname}${url.search}${url.hash}`
+}
+
+const sanitizeObjectHref = ({ href, preserveQuery }) => {
+  const pathname = typeof href?.pathname === 'string' ? href.pathname : ''
+  const currentQuery = preserveQuery ? getCurrentAllowedQuery() : {}
+  const targetQuery = filterQueryObject(href?.query, pathname)
+  const query = { ...currentQuery, ...targetQuery }
+
+  return {
+    ...href,
+    query: Object.keys(query).length > 0 ? query : undefined
+  }
+}
+
+const SmartLink = ({ href, children, preserveQuery = false, ...rest }) => {
+  const siteLink = siteConfig('LINK') || ''
+  const urlString =
+    typeof href === 'string'
+      ? href
+      : typeof href?.pathname === 'string'
+        ? href.pathname
+        : ''
+
+  const isAbsolute = /^https?:\/\//i.test(urlString)
+  const siteOrigin = getSiteOrigin(siteLink)
+  let isExternal = false
+
+  if (isAbsolute) {
+    try {
+      const targetOrigin = new URL(urlString).origin
+      isExternal = !siteOrigin || targetOrigin !== siteOrigin
+    } catch (error) {
+      isExternal = true
     }
   }
 
   if (isExternal) {
-    // 对于外部链接，必须是 string 类型
-    const externalUrl =
-      typeof href === 'string' ? href : new URL(href.pathname, LINK).toString()
-
     return (
       <a
-        href={externalUrl}
+        href={urlString}
         target='_blank'
         rel='noopener noreferrer'
         {...filterDOMProps(rest)}>
@@ -106,14 +158,13 @@ const SmartLink = ({ href, children, ...rest }) => {
     )
   }
 
-  // 内部链接（可为对象形式）
-  const mergedHref =
+  const sanitizedHref =
     typeof href === 'string'
-      ? mergePreservedQueryForStringHref(href)
-      : mergePreservedQueryForObjectHref(href)
+      ? sanitizeStringHref({ href, siteLink, preserveQuery })
+      : sanitizeObjectHref({ href, preserveQuery })
 
   return (
-    <Link href={mergedHref} {...filterLinkProps(rest)}>
+    <Link href={sanitizedHref} {...filterLinkProps(rest)}>
       {children}
     </Link>
   )

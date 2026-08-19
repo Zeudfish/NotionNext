@@ -2,35 +2,26 @@ import { useGlobal } from '@/lib/global'
 import { useImperativeHandle } from 'react'
 import { Moon, Sun } from './HeroIcons'
 
-/**
- * 深色模式按钮
- */
-const DarkModeButton = props => {
-  const { cRef, className } = props
+const DarkModeButton = ({ cRef, className }) => {
   const { isDarkMode, toggleDarkMode } = useGlobal()
 
-  /**
-   * 对外暴露方法
-   */
-  useImperativeHandle(cRef, () => {
-    return {
-      handleChangeDarkMode: () => {
-        toggleDarkMode()
-      }
-    }
-  })
+  useImperativeHandle(cRef, () => ({
+    handleChangeDarkMode: toggleDarkMode
+  }))
 
   return (
-    <div
-      className={`${className || ''} flex justify-center dark:text-gray-200 text-gray-800`}>
-      <div
-        onClick={toggleDarkMode}
+    <div className={`${className || ''} flex justify-center`}>
+      <button
+        type='button'
         id='darkModeButton'
-        className=' hover:scale-110 cursor-pointer transform duration-200 w-5 h-5'>
-        {' '}
+        onClick={toggleDarkMode}
+        aria-label={isDarkMode ? '切换到浅色模式' : '切换到深色模式'}
+        aria-pressed={isDarkMode}
+        className='inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-gray-800 transition hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/10'>
         {isDarkMode ? <Sun /> : <Moon />}
-      </div>
+      </button>
     </div>
   )
 }
+
 export default DarkModeButton

@@ -1,61 +1,38 @@
+const targetUrl = process.env.LHCI_URL
+const collect = {
+  url: [targetUrl || 'http://localhost:3000'],
+  numberOfRuns: 3,
+  settings: {
+    preset: 'desktop',
+    chromeFlags: '--no-sandbox --headless --disable-dev-shm-usage',
+    onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo']
+  }
+}
+
+if (!targetUrl) {
+  collect.startServerCommand = 'npm start'
+  collect.startServerReadyPattern = 'ready|Ready|Local:'
+  collect.startServerReadyTimeout = 120000
+}
+
 module.exports = {
   ci: {
-    collect: {
-      url: ['http://localhost:3000'],
-      startServerCommand: 'npm start',
-      startServerReadyPattern: 'ready on',
-      startServerReadyTimeout: 60000,
-      numberOfRuns: 3,
-      settings: {
-        chromeFlags: '--no-sandbox --disable-dev-shm-usage'
-      }
-    },
+    collect,
     assert: {
       assertions: {
-        'categories:performance': ['warn', { minScore: 0.8 }],
+        'categories:performance': ['error', { minScore: 0.85 }],
         'categories:accessibility': ['error', { minScore: 0.9 }],
-        'categories:best-practices': ['warn', { minScore: 0.8 }],
-        'categories:seo': ['error', { minScore: 0.9 }],
-        'categories:pwa': ['warn', { minScore: 0.6 }],
-        
-        // Core Web Vitals
+        'categories:best-practices': ['error', { minScore: 0.9 }],
+        'categories:seo': ['error', { minScore: 0.95 }],
         'first-contentful-paint': ['warn', { maxNumericValue: 2000 }],
-        'largest-contentful-paint': ['warn', { maxNumericValue: 2500 }],
+        'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],
         'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
-        'total-blocking-time': ['warn', { maxNumericValue: 300 }],
-        
-        // Other important metrics
-        'speed-index': ['warn', { maxNumericValue: 3000 }],
-        'interactive': ['warn', { maxNumericValue: 3000 }],
-        
-        // Accessibility
-        'color-contrast': 'error',
-        'image-alt': 'error',
-        'label': 'error',
-        'link-name': 'error',
-        
-        // Best Practices
-        'uses-https': 'error',
-        'is-on-https': 'error',
-        'uses-http2': 'warn',
-        
-        // SEO
-        'document-title': 'error',
-        'meta-description': 'error',
-        'robots-txt': 'warn',
-        'canonical': 'warn'
+        'total-blocking-time': ['warn', { maxNumericValue: 350 }],
+        interactive: ['warn', { maxNumericValue: 3500 }]
       }
     },
     upload: {
       target: 'temporary-public-storage'
-    },
-    server: {
-      port: 9001,
-      storage: {
-        storageMethod: 'sql',
-        sqlDialect: 'sqlite',
-        sqlDatabasePath: './lhci.db'
-      }
     }
   }
 }

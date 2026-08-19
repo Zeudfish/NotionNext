@@ -1,0 +1,50 @@
+name: Lighthouse CI
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: URL to audit
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-${{ github.event.deployment.id || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Resolve deployment URL
+        id: target
+        env:
+          MANUAL_URL: ${{ github.event.inputs.url }}
+          DEPLOYMENT_URL: ${{ github.event.deployment_status.target_url }}
+        run: echo "url=${MANUAL_URL:-$DEPLOYMENT_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Run Lighthouse quality gate
+        if: steps.target.outputs.url != ''
+        env:
+          CI: true
+          LHCI_URL: ${{ steps.target.outputs.url }}
+        run: yarn perf:lighthouse
