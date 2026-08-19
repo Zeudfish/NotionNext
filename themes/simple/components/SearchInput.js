@@ -31,7 +31,13 @@ const SearchInput = ({ keyword, cRef, className = '' }) => {
     const search = value.trim()
     setLoadingState(true)
     try {
-      await router.push(search ? `/search/${encodeURIComponent(search)}` : '/search')
+      if (!search) {
+        await router.push('/search')
+      } else if (process.env.EXPORT) {
+        await router.push({ pathname: '/search', query: { s: search } })
+      } else {
+        await router.push(`/search/${encodeURIComponent(search)}`)
+      }
     } finally {
       setLoadingState(false)
     }

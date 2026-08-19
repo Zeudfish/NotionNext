@@ -16,12 +16,15 @@ export default function Breadcrumb({ items = [] }) {
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
-    itemListElement: visibleItems.map((item, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: item.label,
-      item: absoluteUrl(item.href)
-    }))
+    itemListElement: visibleItems.map((item, index) => {
+      const listItem = {
+        '@type': 'ListItem',
+        position: index + 1,
+        name: item.label
+      }
+      if (item.href) listItem.item = absoluteUrl(item.href)
+      return listItem
+    })
   }
 
   return (
@@ -52,7 +55,7 @@ export default function Breadcrumb({ items = [] }) {
       <script
         type='application/ld+json'
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(schema).replace(/</g, '\u003c')
+          __html: JSON.stringify(schema).replace(/</g, '\\u003c')
         }}
       />
     </>

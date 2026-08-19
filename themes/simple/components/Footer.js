@@ -2,47 +2,37 @@ import { BeiAnGongAn } from '@/components/BeiAnGongAn'
 import DarkModeButton from '@/components/DarkModeButton'
 import { siteConfig } from '@/lib/config'
 
-/**
- * 页脚
- * @param {*} props
- * @returns
- */
-export default function Footer(props) {
-  const d = new Date()
-  const currentYear = d.getFullYear()
-  const since = siteConfig('SINCE')
+export default function Footer() {
+  const currentYear = new Date().getFullYear()
+  const since = Number.parseInt(siteConfig('SINCE'), 10)
   const copyrightDate =
-    parseInt(since) < currentYear ? since + '-' + currentYear : currentYear
+    Number.isFinite(since) && since < currentYear
+      ? `${since}–${currentYear}`
+      : currentYear
 
   return (
-    <footer className='relative w-full bg-black px-6 border-t'>
-      <DarkModeButton className='text-center pt-4' />
-
-      <div className='text-yellow-300 container mx-auto max-w-4xl py-6 md:flex flex-wrap md:flex-no-wrap md:justify-between items-center text-sm'>
-        <div className='text-center'>
-          &copy;{`${copyrightDate}`} {siteConfig('AUTHOR')}. All rights
-          reserved.
+    <footer className='zeurd-footer'>
+      <div className='zeurd-footer-inner'>
+        <div className='zeurd-footer-copy'>
+          © {copyrightDate} {siteConfig('AUTHOR')}
         </div>
-        <div className='md:p-0 text-center md:text-right text-xs'>
-          {/* 右侧链接 */}
-          {/* <a href="#" className="text-black no-underline hover:underline">Privacy Policy</a> */}
+
+        <nav className='zeurd-footer-links' aria-label='页脚导航'>
           {siteConfig('BEI_AN') && (
-            <a
-              href={siteConfig('BEI_AN_LINK')}
-              className='no-underline hover:underline ml-4'>
+            <a href={siteConfig('BEI_AN_LINK')} rel='nofollow'>
               {siteConfig('BEI_AN')}
             </a>
           )}
           <BeiAnGongAn />
-          <span className='no-underline ml-4'>
-            Powered by
-            <a
-              href='https://github.com/tangly1024/NotionNext'
-              className=' hover:underline'>
-              NotionNext {siteConfig('VERSION')}
-            </a>
-          </span>
-        </div>
+          <a
+            href='https://github.com/tangly1024/NotionNext'
+            target='_blank'
+            rel='noopener noreferrer'>
+            NotionNext {siteConfig('VERSION')}
+          </a>
+        </nav>
+
+        <DarkModeButton className='zeurd-footer-theme' />
       </div>
     </footer>
   )

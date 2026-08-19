@@ -6,7 +6,10 @@ import { useRouter } from 'next/router'
 import { useMemo } from 'react'
 
 const normalizeText = value => {
-  if (Array.isArray(value)) return value.join(' ')
+  if (Array.isArray(value)) return value.map(normalizeText).join(' ')
+  if (value && typeof value === 'object') {
+    return normalizeText(value.name || value.title || value.label || '')
+  }
   return value == null ? '' : String(value)
 }
 
@@ -31,8 +34,8 @@ const Search = props => {
       const fields = [
         ['标题', post.title],
         ['摘要', post.summary],
-        ['标签', normalizeText(post.tags)],
-        ['分类', normalizeText(post.category)]
+        ['标签', post.tags],
+        ['分类', post.category]
       ]
       const hit = fields.find(([, value]) =>
         normalizeText(value).toLowerCase().includes(needle)
@@ -53,6 +56,7 @@ const Search = props => {
     ...props,
     posts: filteredPosts,
     postCount: filteredPosts.length,
+    disablePagination: true,
     keyword
   }
   const theme = siteConfig('THEME', BLOG.THEME, props.NOTION_CONFIG)

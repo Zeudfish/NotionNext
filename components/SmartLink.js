@@ -1,7 +1,19 @@
 import { siteConfig } from '@/lib/config'
 import Link from 'next/link'
 
-const QUERY_ALLOWLIST = new Set(['page', 'sort', 'filter'])
+const INHERITED_QUERY_ALLOWLIST = new Set(['page', 'sort', 'filter'])
+const BLOCKED_QUERY_KEYS = new Set([
+  'demo',
+  'probe',
+  'debug',
+  'debugmode',
+  'gclid',
+  'fbclid'
+])
+
+const isBlockedQueryKey = key =>
+  BLOCKED_QUERY_KEYS.has(String(key || '').toLowerCase()) ||
+  String(key || '').toLowerCase().startsWith('utm_')
 
 const filterDOMProps = props => {
   const {
@@ -33,42 +45,17 @@ const filterLinkProps = props => {
   return rest
 }
 
-const getDynamicRouteKeys = pathname => {
-  const keys = new Set()
-  const pattern = /\[\[?(?:\.\.\.)?([^\]/]+)\]?\]/g
-  let match
-  while ((match = pattern.exec(pathname || '')) !== null) {
-    if (match[1]) keys.add(match[1])
-  }
-  return keys
-}
-
-const filterQueryObject = (query, pathname = '') => {
-  if (!query || typeof query !== 'object') return {}
-  const dynamicKeys = getDynamicRouteKeys(pathname)
-  const filtered = {}
-
-  Object.entries(query).forEach(([key, value]) => {
-    if ((QUERY_ALLOWLIST.has(key) || dynamicKeys.has(key)) && value !== '') {
-      filtered[key] = value
-    }
-  })
-
-  return filtered
-}
-
 const getCurrentAllowedQuery = () => {
   if (typeof window === 'undefined') return {}
-  const params = new URLSearchParams(window.location.search || '')
-  const filtered = {}
 
+  const currentQuery = {}
+  const params = new URLSearchParams(window.location.search || '')
   params.forEach((value, key) => {
-    if (QUERY_ALLOWLIST.has(key) && value !== '') {
-      filtered[key] = value
+    if (INHERITED_QUERY_ALLOWLIST.has(key) && value !== '') {
+      currentQuery[key] = value
     }
   })
-
-  return filtered
+  return currentQuery
 }
 
 const getSiteOrigin = link => {
@@ -77,6 +64,16 @@ const getSiteOrigin = link => {
   } catch (error) {
     return ''
   }
+}
+
+const sanitizeExplicitQuery = query => {
+  if (!query || typeof query !== 'object') return {}
+
+  return Object.fromEntries(
+    Object.entries(query).filter(
+      ([key, value]) => !isBlockedQueryKey(key) && value !== '' && value != null
+    )
+  )
 }
 
 const sanitizeStringHref = ({ href, siteLink, preserveQuery }) => {
@@ -90,33 +87,26 @@ const sanitizeStringHref = ({ href, siteLink, preserveQuery }) => {
     return href
   }
 
-  const allowedQuery = preserveQuery ? getCurrentAllowedQuery() : {}
-  const targetQuery = {}
+  const explicitQuery = {}
   url.searchParams.forEach((value, key) => {
-    if (QUERY_ALLOWLIST.has(key) && value !== '') {
-      targetQuery[key] = value
+    if (!isBlockedQueryKey(key) && value !== '') {
+      explicitQuery[key] = value
     }
   })
 
+  const inheritedQuery = preserveQuery ? getCurrentAllowedQuery() : {}
   url.search = ''
-  Object.entries({ ...allowedQuery, ...targetQuery }).forEach(([key, value]) => {
-    url.searchParams.set(key, value)
-  })
-
-  const isAbsolute = /^https?:\/\//i.test(href)
-  const siteOrigin = getSiteOrigin(siteLink)
-  if (isAbsolute && siteOrigin && url.origin !== siteOrigin) {
-    return href
-  }
+  Object.entries({ ...inheritedQuery, ...explicitQuery }).forEach(
+    ([key, value]) => url.searchParams.set(key, String(value))
+  )
 
   return `${url.pathname}${url.search}${url.hash}`
 }
 
 const sanitizeObjectHref = ({ href, preserveQuery }) => {
-  const pathname = typeof href?.pathname === 'string' ? href.pathname : ''
-  const currentQuery = preserveQuery ? getCurrentAllowedQuery() : {}
-  const targetQuery = filterQueryObject(href?.query, pathname)
-  const query = { ...currentQuery, ...targetQuery }
+  const explicitQuery = sanitizeExplicitQuery(href?.query)
+  const inheritedQuery = preserveQuery ? getCurrentAllowedQuery() : {}
+  const query = { ...inheritedQuery, ...explicitQuery }
 
   return {
     ...href,
@@ -139,8 +129,7 @@ const SmartLink = ({ href, children, preserveQuery = false, ...rest }) => {
 
   if (isAbsolute) {
     try {
-      const targetOrigin = new URL(urlString).origin
-      isExternal = !siteOrigin || targetOrigin !== siteOrigin
+      isExternal = !siteOrigin || new URL(urlString).origin !== siteOrigin
     } catch (error) {
       isExternal = true
     }

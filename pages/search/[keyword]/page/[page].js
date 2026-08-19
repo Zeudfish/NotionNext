@@ -29,8 +29,13 @@ export async function getStaticProps({ params: { keyword, page }, locale }) {
   const results = await searchPublishedPosts(allPosts, normalizedKeyword)
   const postsPerPage =
     Number(siteConfig('POSTS_PER_PAGE', 12, props.NOTION_CONFIG)) || 12
-  const start = postsPerPage * (currentPage - 1)
+  const totalPages = Math.max(1, Math.ceil(results.length / postsPerPage))
 
+  if (currentPage > totalPages) {
+    return { notFound: true }
+  }
+
+  const start = postsPerPage * (currentPage - 1)
   props.posts = results.slice(start, start + postsPerPage)
   props.postCount = results.length
   props.keyword = normalizedKeyword
@@ -52,7 +57,7 @@ export async function getStaticProps({ params: { keyword, page }, locale }) {
 export function getStaticPaths() {
   return {
     paths: [{ params: { keyword: 'NotionNext', page: '1' } }],
-    fallback: 'blocking'
+    fallback: process.env.EXPORT ? false : 'blocking'
   }
 }
 

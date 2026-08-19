@@ -8,26 +8,30 @@ import { isBrowser } from '@/lib/utils'
 import { Transition } from '@headlessui/react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
-import { createContext, useContext, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
+import ArticleInfo from './components/ArticleInfo'
+import BlogArchiveItem from './components/BlogArchiveItem'
+import BlogListPage from './components/BlogListPage'
+import BlogListScroll from './components/BlogListScroll'
 import BlogPostBar from './components/BlogPostBar'
+import Breadcrumb from './components/Breadcrumb'
+import Footer from './components/Footer'
+import Header from './components/Header'
 import HomeOverview from './components/HomeOverview'
+import JumpToTopButton from './components/JumpToTopButton'
+import NavBar from './components/NavBar'
+import SearchInput from './components/SearchInput'
 import CONFIG from './config'
+import { ThemeGlobalSimple } from './context'
 import { Style } from './style'
+
+export { useSimpleGlobal } from './context'
 
 const AlgoliaSearchModal = dynamic(
   () => import('@/components/AlgoliaSearchModal'),
   { ssr: false }
 )
-const BlogListScroll = dynamic(() => import('./components/BlogListScroll'), {
-  ssr: false
-})
-const BlogArchiveItem = dynamic(() => import('./components/BlogArchiveItem'), {
-  ssr: false
-})
 const ArticleLock = dynamic(() => import('./components/ArticleLock'), {
-  ssr: false
-})
-const ArticleInfo = dynamic(() => import('./components/ArticleInfo'), {
   ssr: false
 })
 const Comment = dynamic(() => import('@/components/Comment'), { ssr: false })
@@ -35,37 +39,30 @@ const ArticleAround = dynamic(() => import('./components/ArticleAround'), {
   ssr: false
 })
 const ShareBar = dynamic(() => import('@/components/ShareBar'), { ssr: false })
-const TopBar = dynamic(() => import('./components/TopBar'), { ssr: false })
-const Header = dynamic(() => import('./components/Header'), { ssr: false })
-const NavBar = dynamic(() => import('./components/NavBar'), { ssr: false })
+const TopBar = dynamic(() => import('./components/TopBar'))
 const SideBar = dynamic(() => import('./components/SideBar'), { ssr: false })
-const JumpToTopButton = dynamic(() => import('./components/JumpToTopButton'), {
-  ssr: false
-})
-const Footer = dynamic(() => import('./components/Footer'), { ssr: false })
-const SearchInput = dynamic(() => import('./components/SearchInput'), {
-  ssr: false
-})
 const WWAds = dynamic(() => import('@/components/WWAds'), { ssr: false })
-const BlogListPage = dynamic(() => import('./components/BlogListPage'), {
-  ssr: false
-})
 const RecommendPosts = dynamic(() => import('./components/RecommendPosts'), {
   ssr: false
 })
-const backButtonClassName =
-  'mb-6 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-500 hover:shadow-md dark:border-gray-700 dark:bg-black dark:text-gray-300 dark:hover:border-blue-500 dark:hover:text-blue-300'
 
-const HomeBackButton = () => (
-  <a href='/' className={backButtonClassName} aria-label='返回首页'>
-    <i className='fas fa-home' />
-    <span>返回首页</span>
-  </a>
-)
+const getLabel = value => {
+  if (Array.isArray(value)) return getLabel(value[0])
+  if (value && typeof value === 'object') {
+    return getLabel(value.name || value.title || value.label)
+  }
+  return value ? String(value) : ''
+}
+
+const toBoolean = value =>
+  value === true || String(value || '').toLowerCase() === 'true'
+
+const backButtonClassName = 'zeurd-back-button zeurd-control'
 
 const ArticleBackButton = ({ post }) => {
-  const listHref = post?.category
-    ? `/category/${encodeURIComponent(post.category)}`
+  const category = getLabel(post?.category)
+  const listHref = category
+    ? `/category/${encodeURIComponent(category)}`
     : '/'
 
   return (
@@ -73,30 +70,56 @@ const ArticleBackButton = ({ post }) => {
       href={listHref}
       className={backButtonClassName}
       aria-label='返回文章列表'>
-      <i className='fas fa-arrow-left' />
+      <i className='fas fa-arrow-left' aria-hidden='true' />
       <span>返回文章列表</span>
     </SmartLink>
   )
 }
 
-const ThemeGlobalSimple = createContext()
-export const useSimpleGlobal = () => useContext(ThemeGlobalSimple)
+const getListBreadcrumb = ({ category, tag, keyword }) => {
+  if (category) {
+    return [
+      { label: '首页', href: '/' },
+      { label: '分类', href: '/category' },
+      { label: category, current: true }
+    ]
+  }
+  if (tag) {
+    return [
+      { label: '首页', href: '/' },
+      { label: '标签', href: '/tag' },
+      { label: tag, current: true }
+    ]
+  }
+  if (keyword) {
+    return [
+      { label: '首页', href: '/' },
+      { label: '搜索', href: '/search' },
+      { label: keyword, current: true }
+    ]
+  }
+  return []
+}
 
 const LayoutBase = props => {
   const { children, slotTop, post } = props
   const { onLoading, fullWidth } = useGlobal()
   const router = useRouter()
   const searchModal = useRef(null)
-  const cleanPath = router.asPath.split('?')[0].replace(/\/$/, '') || '/'
+  const cleanPath = router.asPath.split(/[?#]/)[0].replace(/\/$/, '') || '/'
   const showHeroHeader = cleanPath === '/' || cleanPath === '/zh-CN'
   const showRightSidebar = !showHeroHeader && !fullWidth
+  const reverseSidebar = toBoolean(siteConfig('LAYOUT_SIDEBAR_REVERSE'))
 
   return (
     <ThemeGlobalSimple.Provider value={{ searchModal }}>
       <div
         id='theme-simple'
-        className={`${siteConfig('FONT_STYLE')} min-h-screen flex flex-col bg-white scroll-smooth dark:bg-black dark:text-gray-300`}>
+        className={`${siteConfig('FONT_STYLE')} min-h-screen flex flex-col`}>
         <Style />
+        <a className='zeurd-skip-link' href='#main-content'>
+          跳到主要内容
+        </a>
 
         {siteConfig('SIMPLE_TOP_BAR', null, CONFIG) && <TopBar {...props} />}
         {showHeroHeader && <Header {...props} />}
@@ -104,12 +127,12 @@ const LayoutBase = props => {
 
         <div
           id='container-wrapper'
-          className={`${
-            JSON.parse(siteConfig('LAYOUT_SIDEBAR_REVERSE'))
-              ? 'flex-row-reverse'
-              : ''
-          } mx-auto flex w-full max-w-9/10 flex-1 items-start pt-12`}>
-          <div id='container-inner' className='min-h-fit w-full flex-grow'>
+          className={reverseSidebar ? 'is-reversed' : ''}>
+          <main
+            id='main-content'
+            tabIndex='-1'
+            aria-busy={onLoading}
+            className='zeurd-main-content'>
             <Transition
               show={!onLoading}
               appear
@@ -124,25 +147,24 @@ const LayoutBase = props => {
               {children}
             </Transition>
             <AdSlot type='native' />
-          </div>
+          </main>
 
           {showRightSidebar && (
-            <div
+            <aside
               id='right-sidebar'
-              className={`sticky top-8 hidden flex-none border-l border-gray-100 dark:border-gray-800 xl:block ${
-                post ? 'w-60 pl-8' : 'w-96 pl-12'
-              }`}>
+              className={post ? 'is-article' : 'is-list'}
+              aria-label='辅助导航'>
               <SideBar {...props} />
-            </div>
+            </aside>
           )}
         </div>
 
-        <div className='fixed bottom-4 right-4 z-20'>
+        <div className='zeurd-jump-wrapper'>
           <JumpToTopButton />
         </div>
 
         <AlgoliaSearchModal cRef={searchModal} {...props} />
-        <Footer {...props} />
+        <Footer />
       </div>
     </ThemeGlobalSimple.Provider>
   )
@@ -151,12 +173,16 @@ const LayoutBase = props => {
 const LayoutIndex = props => <HomeOverview {...props} />
 
 const LayoutPostList = props => {
-  const showHomeBack = Boolean(props?.category || props?.tag || props?.keyword)
+  const listStyle = String(
+    siteConfig('POST_LIST_STYLE', 'page', props.NOTION_CONFIG)
+  ).toLowerCase()
+  const breadcrumb = getListBreadcrumb(props)
+
   return (
     <>
-      {showHomeBack && <HomeBackButton />}
+      <Breadcrumb items={breadcrumb} />
       <BlogPostBar {...props} />
-      {siteConfig('POST_LIST_STYLE') === 'page' ? (
+      {listStyle === 'page' ? (
         <BlogListPage {...props} />
       ) : (
         <BlogListScroll {...props} />
@@ -169,73 +195,101 @@ const LayoutSearch = props => {
   const { keyword } = props
 
   useEffect(() => {
-    if (isBrowser) {
+    if (!isBrowser || !keyword) return
+    const frame = window.requestAnimationFrame(() => {
       replaceSearchResult({
         doms: document.getElementById('posts-wrapper'),
         search: keyword,
         target: {
           element: 'span',
-          className: 'border-b border-dashed text-red-500'
+          className: 'zeurd-search-highlight'
         }
       })
-    }
-  }, [keyword])
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [keyword, props.posts])
 
-  const slotTop = siteConfig('ALGOLIA_APP_ID') ? null : (
-    <SearchInput {...props} />
-  )
-
-  return <LayoutPostList {...props} slotTop={slotTop} />
-}
-
-const LayoutArchive = props => {
-  const { archivePosts } = props
   return (
     <>
-      <HomeBackButton />
-      <div className='mb-10 min-h-screen w-full p-3 pb-20 md:py-12'>
-        {Object.keys(archivePosts).map(archiveTitle => (
-          <BlogArchiveItem
-            key={archiveTitle}
-            archiveTitle={archiveTitle}
-            archivePosts={archivePosts}
-          />
-        ))}
-      </div>
+      {!siteConfig('ALGOLIA_APP_ID') && (
+        <div className='zeurd-search-page-box'>
+          <SearchInput {...props} />
+        </div>
+      )}
+      <LayoutPostList {...props} />
     </>
   )
 }
 
+const LayoutArchive = ({ archivePosts = {} }) => (
+  <>
+    <Breadcrumb
+      items={[
+        { label: '首页', href: '/' },
+        { label: '归档', current: true }
+      ]}
+    />
+    <header className='zeurd-list-header'>
+      <div className='zeurd-list-eyebrow'>
+        <i className='fas fa-archive' aria-hidden='true' />
+        <span>ARCHIVE</span>
+      </div>
+      <h1>文章归档</h1>
+      <p>按时间回看已经发布的记录。</p>
+    </header>
+    <div className='zeurd-archive-list'>
+      {Object.keys(archivePosts).map(archiveTitle => (
+        <BlogArchiveItem
+          key={archiveTitle}
+          archiveTitle={archiveTitle}
+          archivePosts={archivePosts}
+        />
+      ))}
+    </div>
+  </>
+)
+
 const LayoutSlug = props => {
   const { post, lock, validPassword, prev, next, recommendPosts } = props
   const { fullWidth } = useGlobal()
+  const category = getLabel(post?.category)
+  const breadcrumb = post
+    ? [
+        { label: '首页', href: '/' },
+        ...(category
+          ? [
+              { label: '分类', href: '/category' },
+              {
+                label: category,
+                href: `/category/${encodeURIComponent(category)}`
+              }
+            ]
+          : []),
+        { label: post.title, current: true }
+      ]
+    : []
 
   return (
     <>
       {lock && <ArticleLock validPassword={validPassword} />}
 
       {!lock && post && (
-        <div
-          className={`px-2 ${
-            fullWidth
-              ? ''
-              : 'zeurd-article-page xl:max-w-4xl 2xl:max-w-6xl'
-          }`}>
+        <div className={fullWidth ? '' : 'zeurd-article-page'}>
+          <Breadcrumb items={breadcrumb} />
           <ArticleBackButton post={post} />
 
           <article className={fullWidth ? '' : 'zeurd-reading-surface'}>
             <ArticleInfo post={post} />
             <WWAds orientation='horizontal' className='w-full' />
-
             <div id='article-wrapper'>
-              {!lock && <NotionPage post={post} />}
+              <NotionPage post={post} />
             </div>
           </article>
 
           <ShareBar post={post} />
           <AdSlot type='in-article' />
 
-          {post?.type === 'Post' && (
+          {post.type === 'Post' && (
             <>
               <ArticleAround prev={prev} next={next} />
               <RecommendPosts recommendPosts={recommendPosts} />
@@ -250,87 +304,96 @@ const LayoutSlug = props => {
 }
 
 const Layout404 = () => (
-  <section className='mx-auto flex min-h-[55vh] max-w-2xl flex-col items-center justify-center px-6 text-center'>
-    <div className='text-sm font-bold uppercase tracking-[0.25em] text-blue-500'>
-      Error 404
-    </div>
-    <h1 className='mt-4 text-3xl font-bold text-gray-900 dark:text-gray-100 md:text-4xl'>
-      这篇内容可能被移动或删除了
-    </h1>
-    <p className='mt-4 leading-7 text-gray-500 dark:text-gray-400'>
-      页面不会自动跳转。可以回到首页，或从主要内容分类继续浏览。
-    </p>
-    <div className='mt-8 flex flex-wrap justify-center gap-3'>
+  <section className='zeurd-404'>
+    <div className='zeurd-list-eyebrow'>ERROR 404</div>
+    <h1>这篇内容可能被移动或删除了</h1>
+    <p>页面不会自动跳转。可以回到首页，或者从主要内容分类继续浏览。</p>
+    <div className='zeurd-404-actions'>
       <SmartLink href='/' className={backButtonClassName}>
-        <i className='fas fa-home' />
+        <i className='fas fa-home' aria-hidden='true' />
         <span>回到首页</span>
       </SmartLink>
       <SmartLink href='/search' className={backButtonClassName}>
-        <i className='fas fa-search' />
+        <i className='fas fa-search' aria-hidden='true' />
         <span>搜索文章</span>
       </SmartLink>
       <SmartLink
         href='/category/%E8%AE%BA%E6%96%87%E5%AF%BC%E8%AF%BB'
         className={backButtonClassName}>
-        <i className='fas fa-book-open' />
+        <i className='fas fa-book-open' aria-hidden='true' />
         <span>论文导读</span>
       </SmartLink>
       <SmartLink
         href='/category/%E6%8A%80%E6%9C%AF%E5%88%86%E4%BA%AB'
         className={backButtonClassName}>
-        <i className='fas fa-screwdriver-wrench' />
+        <i className='fas fa-screwdriver-wrench' aria-hidden='true' />
         <span>技术分享</span>
       </SmartLink>
     </div>
   </section>
 )
 
-const LayoutCategoryIndex = props => {
-  const { categoryOptions } = props
-  return (
-    <>
-      <HomeBackButton />
-      <div id='category-list' className='flex flex-wrap duration-200'>
-        {categoryOptions?.map(category => (
-          <SmartLink
-            key={category.name}
-            href={`/category/${category.name}`}
-            passHref
-            legacyBehavior>
-            <div className='cursor-pointer px-5 py-2 hover:bg-gray-100 hover:text-black dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white'>
-              <i className='fas fa-folder mr-4' />
-              {category.name}({category.count})
-            </div>
-          </SmartLink>
-        ))}
+const LayoutCategoryIndex = ({ categoryOptions = [] }) => (
+  <>
+    <Breadcrumb
+      items={[
+        { label: '首页', href: '/' },
+        { label: '分类', current: true }
+      ]}
+    />
+    <header className='zeurd-list-header'>
+      <div className='zeurd-list-eyebrow'>
+        <i className='fas fa-folder-open' aria-hidden='true' />
+        <span>CATEGORIES</span>
       </div>
-    </>
-  )
-}
+      <h1>内容分类</h1>
+      <p>从研究、工程与生活主题进入站内内容。</p>
+    </header>
+    <div id='category-list' className='zeurd-taxonomy-grid'>
+      {categoryOptions.map(category => (
+        <SmartLink
+          key={category.name}
+          href={`/category/${encodeURIComponent(category.name)}`}
+          className='zeurd-taxonomy-card zeurd-control'>
+          <i className='fas fa-folder' aria-hidden='true' />
+          <span>{category.name}</span>
+          <small>{category.count || 0} 篇</small>
+        </SmartLink>
+      ))}
+    </div>
+  </>
+)
 
-const LayoutTagIndex = props => {
-  const { tagOptions } = props
-  return (
-    <>
-      <HomeBackButton />
-      <div id='tags-list' className='flex flex-wrap duration-200'>
-        {tagOptions.map(tag => (
-          <div key={tag.name} className='p-2'>
-            <SmartLink
-              href={`/tag/${encodeURIComponent(tag.name)}`}
-              passHref
-              className={`notion-${tag.color}_background mr-2 inline-block cursor-pointer whitespace-nowrap rounded px-2 py-1 text-xs text-gray-600 duration-200 hover:bg-gray-500 hover:text-white hover:shadow-xl dark:border-gray-400 dark:bg-gray-800 dark:hover:text-white`}>
-              <div className='font-light dark:text-gray-400'>
-                <i className='fas fa-tag mr-1' />
-                {tag.name + (tag.count ? `(${tag.count})` : '')}
-              </div>
-            </SmartLink>
-          </div>
-        ))}
+const LayoutTagIndex = ({ tagOptions = [] }) => (
+  <>
+    <Breadcrumb
+      items={[
+        { label: '首页', href: '/' },
+        { label: '标签', current: true }
+      ]}
+    />
+    <header className='zeurd-list-header'>
+      <div className='zeurd-list-eyebrow'>
+        <i className='fas fa-tags' aria-hidden='true' />
+        <span>TAGS</span>
       </div>
-    </>
-  )
-}
+      <h1>文章标签</h1>
+      <p>用更细的主题线索查找相关文章。</p>
+    </header>
+    <div id='tags-list' className='zeurd-tag-index'>
+      {tagOptions.map(tag => (
+        <SmartLink
+          key={tag.name}
+          href={`/tag/${encodeURIComponent(tag.name)}`}
+          className='zeurd-tag-index-item zeurd-control'>
+          <i className='fas fa-tag' aria-hidden='true' />
+          <span>{tag.name}</span>
+          {tag.count ? <small>{tag.count}</small> : null}
+        </SmartLink>
+      ))}
+    </div>
+  </>
+)
 
 export {
   Layout404,
