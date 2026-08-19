@@ -1,74 +1,109 @@
+import SmartLink from '@/components/SmartLink'
 import { AdSlot } from '@/components/GoogleAdsense'
 import { siteConfig } from '@/lib/config'
 import { useGlobal } from '@/lib/global'
-import SmartLink from '@/components/SmartLink'
 import { useRouter } from 'next/router'
 import CONFIG from '../config'
 import { BlogItem } from './BlogItem'
 
-/**
- * 博客列表
- * @param {*} props
- * @returns
- */
-export default function BlogListPage(props) {
-  const { page = 1, posts, postCount } = props
-  const router = useRouter()
-  const { NOTION_CONFIG } = useGlobal()
-  const POSTS_PER_PAGE = siteConfig('POSTS_PER_PAGE', null, NOTION_CONFIG)
-  const totalPage = Math.ceil(postCount / POSTS_PER_PAGE)
-  const currentPage = +page
+const buildPageHref = (prefix, targetPage) => {
+  if (targetPage <= 1) return prefix || '/'
+  const normalizedPrefix = prefix === '/' ? '' : prefix
+  return `${normalizedPrefix}/page/${targetPage}`
+}
 
-  // 博客列表嵌入广告
-  const SIMPLE_POST_AD_ENABLE = siteConfig(
-    'SIMPLE_POST_AD_ENABLE',
-    false,
-    CONFIG
-  )
+const PageControl = ({ href, disabled, direction, children }) => {
+  const className = `zeurd-page-control zeurd-control ${
+    disabled ? 'is-disabled' : ''
+  }`
 
-  const showPrev = currentPage > 1
-  const showNext = page < totalPage
-  const pagePrefix = router.asPath
-    .split('?')[0]
-    .replace(/\/page\/[1-9]\d*/, '')
-    .replace(/\/$/, '')
-    .replace('.html', '')
+  if (disabled) {
+    return (
+      <span className={className} aria-disabled='true'>
+        {direction === 'left' && (
+          <i className='fa-solid fa-arrow-left' aria-hidden='true' />
+        )}
+        <span>{children}</span>
+        {direction === 'right' && (
+          <i className='fa-solid fa-arrow-right' aria-hidden='true' />
+        )}
+      </span>
+    )
+  }
 
   return (
-    <div className='w-full md:pr-8 mb-12'>
-      <div id='posts-wrapper'>
-        {posts?.map((p, index) => (
-          <div key={p.id}>
-            {SIMPLE_POST_AD_ENABLE && (index + 1) % 3 === 0 && (
+    <SmartLink href={href} preserveQuery className={className}>
+      {direction === 'left' && (
+        <i className='fa-solid fa-arrow-left' aria-hidden='true' />
+      )}
+      <span>{children}</span>
+      {direction === 'right' && (
+        <i className='fa-solid fa-arrow-right' aria-hidden='true' />
+      )}
+    </SmartLink>
+  )
+}
+
+export default function BlogListPage({
+  page = 1,
+  posts = [],
+  postCount = 0,
+  disablePagination = false
+}) {
+  const router = useRouter()
+  const { NOTION_CONFIG } = useGlobal()
+  const postsPerPage =
+    Number(siteConfig('POSTS_PER_PAGE', 12, NOTION_CONFIG)) || 12
+  const totalPage = Math.max(1, Math.ceil(postCount / postsPerPage))
+  const currentPage = Math.max(1, Number(page) || 1)
+  const showPrev = currentPage > 1
+  const showNext = currentPage < totalPage
+  const path = router.asPath.split(/[?#]/)[0].replace(/\.html$/, '')
+  const pagePrefix = path.replace(/\/page\/[1-9]\d*$/, '').replace(/\/$/, '') || '/'
+
+  const adEnabled = siteConfig('SIMPLE_POST_AD_ENABLE', false, CONFIG)
+
+  return (
+    <section className='zeurd-post-list' aria-label='文章列表'>
+      <div id='posts-wrapper' aria-live='polite'>
+        {posts.map((post, index) => (
+          <div className='zeurd-post-slot' key={post.id}>
+            {adEnabled && (index + 1) % 3 === 0 && (
               <AdSlot type='in-article' />
             )}
-            {SIMPLE_POST_AD_ENABLE && index + 1 === 4 && <AdSlot type='flow' />}
-            <BlogItem post={p} />
+            {adEnabled && index + 1 === 4 && <AdSlot type='flow' />}
+            <BlogItem post={post} />
           </div>
         ))}
       </div>
 
-      <div className='flex justify-between text-xs mt-1'>
-        <SmartLink
-          href={{
-            pathname:
-              currentPage - 1 === 1
-                ? `${pagePrefix}/`
-                : `${pagePrefix}/page/${currentPage - 1}`,
-            query: router.query.s ? { s: router.query.s } : {}
-          }}
-          className={`${showPrev ? 'text-blue-600 border-b border-blue-400 visible ' : ' invisible bg-gray pointer-events-none '} no-underline pb-1 px-3`}>
-          NEWER POSTS <i className='fa-solid fa-arrow-left'></i>
-        </SmartLink>
-        <SmartLink
-          href={{
-            pathname: `${pagePrefix}/page/${currentPage + 1}`,
-            query: router.query.s ? { s: router.query.s } : {}
-          }}
-          className={`${showNext ? 'text-blue-600 border-b border-blue-400 visible' : ' invisible bg-gray pointer-events-none '} no-underline pb-1 px-3`}>
-          OLDER POSTS <i className='fa-solid fa-arrow-right'></i>
-        </SmartLink>
-      </div>
-    </div>
+      {posts.length === 0 && (
+        <div className='zeurd-empty-state' role='status'>
+          <i className='fa-regular fa-compass' aria-hidden='true' />
+          <h2>暂时没有匹配的文章</h2>
+          <p>可以换一个关键词，或者从分类与标签继续浏览。</p>
+        </div>
+      )}
+
+      {!disablePagination && postCount > postsPerPage && (
+        <nav className='zeurd-pagination' aria-label='文章分页'>
+          <PageControl
+            href={buildPageHref(pagePrefix, currentPage - 1)}
+            disabled={!showPrev}
+            direction='left'>
+            较新文章
+          </PageControl>
+          <span className='zeurd-page-status' aria-current='page'>
+            {currentPage} / {totalPage}
+          </span>
+          <PageControl
+            href={buildPageHref(pagePrefix, currentPage + 1)}
+            disabled={!showNext}
+            direction='right'>
+            更早文章
+          </PageControl>
+        </nav>
+      )}
+    </section>
   )
 }

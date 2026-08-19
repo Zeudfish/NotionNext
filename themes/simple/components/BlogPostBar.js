@@ -1,41 +1,49 @@
-import { useGlobal } from '@/lib/global'
+const getCountText = postCount =>
+  Number.isFinite(Number(postCount)) ? `共 ${postCount} 篇` : ''
 
-/**
- * 文章列表上方嵌入
- * @param {*} props
- * @returns
- */
-export default function BlogPostBar(props) {
-  const { tag, category, categoryDescription, postCount } = props
-  const { locale } = useGlobal()
+export default function BlogPostBar({
+  tag,
+  category,
+  keyword,
+  categoryDescription,
+  postCount
+}) {
+  let icon = ''
+  let eyebrow = ''
+  let title = ''
+  let description = ''
 
-  if (tag) {
-    return (
-      <div className='flex items-center py-2 text-xl'>
-        <i className='fas fa-tag mr-2' />
-        {locale.COMMON.TAGS}: {tag}
-      </div>
-    )
+  if (keyword) {
+    icon = 'fas fa-magnifying-glass'
+    eyebrow = 'SEARCH'
+    title = `搜索：${keyword}`
+    description = '按标题、摘要、分类、标签与正文内容匹配。'
   } else if (category) {
-    return (
-      <section className='mb-8 border-b border-gray-100 pb-6 dark:border-gray-800'>
-        <div className='flex items-center text-2xl font-bold text-gray-900 dark:text-gray-100'>
-          <i className='fas fa-th mr-3 text-blue-500' />
-          {category}
-        </div>
-        {categoryDescription && (
-          <p className='mt-3 max-w-3xl text-sm leading-7 text-gray-500 dark:text-gray-400 md:text-base'>
-            {categoryDescription}
-          </p>
-        )}
-        {Number.isFinite(Number(postCount)) && (
-          <div className='mt-3 text-xs text-gray-400 dark:text-gray-500'>
-            共 {postCount} 篇
-          </div>
-        )}
-      </section>
-    )
+    icon = 'fas fa-folder-open'
+    eyebrow = 'CATEGORY'
+    title = category
+    description = categoryDescription || ''
+  } else if (tag) {
+    icon = 'fas fa-tag'
+    eyebrow = 'TAG'
+    title = tag
   } else {
-    return <></>
+    return null
   }
+
+  return (
+    <header className='zeurd-list-header'>
+      <div className='zeurd-list-eyebrow'>
+        <i className={icon} aria-hidden='true' />
+        <span>{eyebrow}</span>
+      </div>
+      <div className='zeurd-list-title-row'>
+        <h1>{title}</h1>
+        {getCountText(postCount) && (
+          <span className='zeurd-list-count'>{getCountText(postCount)}</span>
+        )}
+      </div>
+      {description && <p>{description}</p>}
+    </header>
+  )
 }

@@ -2,22 +2,22 @@ import Collapse from '@/components/Collapse'
 import { siteConfig } from '@/lib/config'
 import { useGlobal } from '@/lib/global'
 import { useRouter } from 'next/router'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import CONFIG from '../config'
 import { MenuItemCollapse } from './MenuItemCollapse'
 import { MenuItemDrop } from './MenuItemDrop'
 
-/**
- * 菜单导航
- */
 export const MenuList = ({ customNav, customMenu, categoryOptions }) => {
   const { locale } = useGlobal()
-  const [isOpen, changeIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
   const collapseRef = useRef(null)
+  const handleHeightChange = useCallback(param => {
+    collapseRef.current?.updateCollapseHeight(param)
+  }, [])
 
   useEffect(() => {
-    const handleRouteChange = () => changeIsOpen(false)
+    const handleRouteChange = () => setIsOpen(false)
     router.events.on('routeChangeStart', handleRouteChange)
     return () => router.events.off('routeChangeStart', handleRouteChange)
   }, [router.events])
@@ -51,9 +51,7 @@ export const MenuList = ({ customNav, customMenu, categoryOptions }) => {
     }
   ]
 
-  if (customNav) {
-    links = links.concat(customNav)
-  }
+  if (customNav) links = links.concat(customNav)
 
   if (siteConfig('CUSTOM_MENU')) {
     const customLinks = [...(customMenu || [])]
@@ -63,9 +61,7 @@ export const MenuList = ({ customNav, customMenu, categoryOptions }) => {
     )
 
     links = customLinks
-    if (categoryOptions?.length > 0 && !hasCategory) {
-      links.unshift(categoryLink)
-    }
+    if (categoryOptions?.length > 0 && !hasCategory) links.unshift(categoryLink)
     if (!hasHome) {
       links.unshift({
         icon: 'fas fa-house',
@@ -76,45 +72,45 @@ export const MenuList = ({ customNav, customMenu, categoryOptions }) => {
     }
   }
 
-  if (!links.length) return null
+  const visibleLinks = links.filter(link => link?.show)
+  if (visibleLinks.length === 0) return null
 
   return (
     <>
-      <div id='nav-menu-pc' className='my-auto hidden md:flex'>
-        {links.map((link, index) => (
+      <div id='nav-menu-pc' className='zeurd-desktop-menu'>
+        {visibleLinks.map((link, index) => (
           <MenuItemDrop key={`${link.href}-${index}`} link={link} />
         ))}
       </div>
 
-      <div
-        id='nav-menu-mobile'
-        className='my-auto flex justify-start md:hidden'>
+      <div id='nav-menu-mobile' className='zeurd-mobile-menu'>
         <button
           type='button'
-          onClick={() => changeIsOpen(!isOpen)}
-          className='cursor-pointer border-0 bg-transparent p-0 transition hover:text-blue-600'
+          onClick={() => setIsOpen(open => !open)}
+          className='zeurd-mobile-menu-trigger zeurd-control'
           aria-expanded={isOpen}
-          aria-label={isOpen ? '关闭菜单' : '打开菜单'}>
+          aria-controls='simple-mobile-menu-panel'>
           <i
-            className={`${isOpen ? 'rotate-90' : ''} fa fa-bars mr-2 transition duration-200`}
+            className={`fas fa-bars transition-transform ${
+              isOpen ? 'rotate-90' : ''
+            }`}
+            aria-hidden='true'
           />
           <span>{isOpen ? '关闭' : '菜单'}</span>
         </button>
 
         <Collapse
           collapseRef={collapseRef}
-          className='absolute left-0 top-14 w-full'
+          className='zeurd-mobile-menu-collapse'
           isOpen={isOpen}>
-          <div
-            id='menu-wrap'
-            className='border bg-white shadow-lg dark:border-hexo-black-gray dark:bg-black'>
-            {links.map((link, index) => (
+          <div id='simple-mobile-menu-panel' className='zeurd-mobile-menu-panel'>
+            {visibleLinks.map((link, index) => (
               <MenuItemCollapse
                 key={`${link.href}-${index}`}
                 link={link}
-                onHeightChange={param =>
-                  collapseRef.current?.updateCollapseHeight(param)
-                }
+                currentPath={router.asPath}
+                onNavigate={() => setIsOpen(false)}
+                onHeightChange={handleHeightChange}
               />
             ))}
           </div>

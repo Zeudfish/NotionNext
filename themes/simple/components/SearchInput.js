@@ -1,86 +1,101 @@
 import { useRouter } from 'next/router'
-import { useImperativeHandle, useRef, useState } from 'react'
-let lock = false
+import { useEffect, useImperativeHandle, useRef, useState } from 'react'
 
-const SearchInput = ({ keyword, cRef, className }) => {
-  const [onLoading, setLoadingState] = useState(false)
+const decodeKeyword = keyword => {
+  try {
+    return decodeURIComponent(String(keyword || ''))
+  } catch (error) {
+    return String(keyword || '')
+  }
+}
+
+const SearchInput = ({ keyword, cRef, className = '' }) => {
   const router = useRouter()
-  const searchInputRef = useRef()
-  useImperativeHandle(cRef, () => {
-    return {
-      focus: () => {
-        searchInputRef?.current?.focus()
+  const searchInputRef = useRef(null)
+  const composingRef = useRef(false)
+  const [value, setValue] = useState(decodeKeyword(keyword))
+  const [onLoading, setLoadingState] = useState(false)
+
+  useEffect(() => {
+    setValue(decodeKeyword(keyword))
+  }, [keyword])
+
+  useImperativeHandle(cRef, () => ({
+    focus: () => searchInputRef.current?.focus()
+  }))
+
+  const handleSearch = async event => {
+    event?.preventDefault()
+    if (composingRef.current) return
+
+    const search = value.trim()
+    setLoadingState(true)
+    try {
+      if (!search) {
+        await router.push('/search')
+      } else if (process.env.NEXT_PUBLIC_IS_EXPORT === 'true') {
+        await router.push({ pathname: '/search', query: { s: search } })
+      } else {
+        await router.push(`/search/${encodeURIComponent(search)}`)
       }
-    }
-  })
-
-  const handleSearch = () => {
-    const key = searchInputRef.current.value
-
-    if (key && key !== '') {
-      setLoadingState(true)
-      location.href = '/search/' + key
-    } else {
-      router.push({ pathname: '/' }).then(r => {
-      })
+    } finally {
+      setLoadingState(false)
     }
   }
-  const handleKeyUp = (e) => {
-    if (e.keyCode === 13) { // 回车
-      handleSearch(searchInputRef.current.value)
-    } else if (e.keyCode === 27) { // ESC
-      cleanSearch()
-    }
-  }
+
   const cleanSearch = () => {
-    searchInputRef.current.value = ''
+    setValue('')
+    searchInputRef.current?.focus()
   }
 
-  const [showClean, setShowClean] = useState(false)
-  const updateSearchKey = (val) => {
-    if (lock) {
-      return
-    }
-    searchInputRef.current.value = val
+  return (
+    <form
+      role='search'
+      onSubmit={handleSearch}
+      className={`zeurd-search-form ${className}`}>
+      <label className='sr-only' htmlFor='simple-search-page'>
+        搜索文章
+      </label>
+      <input
+        id='simple-search-page'
+        ref={searchInputRef}
+        type='search'
+        value={value}
+        className='zeurd-search-input'
+        onCompositionStart={() => {
+          composingRef.current = true
+        }}
+        onCompositionEnd={() => {
+          composingRef.current = false
+        }}
+        onChange={event => setValue(event.target.value)}
+        placeholder='搜索标题、摘要与正文'
+        autoComplete='off'
+      />
 
-    if (val) {
-      setShowClean(true)
-    } else {
-      setShowClean(false)
-    }
-  }
-  function lockSearchInput() {
-    lock = true
-  }
+      {value && (
+        <button
+          type='button'
+          className='zeurd-search-icon-button zeurd-control'
+          onClick={cleanSearch}
+          aria-label='清空搜索词'>
+          <i className='fas fa-times' aria-hidden='true' />
+        </button>
+      )}
 
-  function unLockSearchInput() {
-    lock = false
-  }
-
-  return <div className={'flex w-full bg-gray-100 ' + className}>
-        <input
-            ref={searchInputRef}
-            type='text'
-            className={'outline-none w-full text-sm pl-2 transition focus:shadow-lg font-light leading-10 text-black bg-gray-100 dark:bg-gray-900 dark:text-white'}
-            onKeyUp={handleKeyUp}
-            onCompositionStart={lockSearchInput}
-            onCompositionUpdate={lockSearchInput}
-            onCompositionEnd={unLockSearchInput}
-            onChange={e => updateSearchKey(e.target.value)}
-            defaultValue={keyword}
+      <button
+        type='submit'
+        className='zeurd-search-submit zeurd-control'
+        aria-label='开始搜索'
+        disabled={onLoading}>
+        <i
+          className={`fas ${onLoading ? 'fa-spinner animate-spin' : 'fa-search'}`}
+          aria-hidden='true'
         />
-
-        <div className='-ml-8 cursor-pointer float-right items-center justify-center py-2'
-            onClick={handleSearch}>
-            <i className={`hover:text-black transform duration-200 text-gray-500  dark:hover:text-gray-300 cursor-pointer fas ${onLoading ? 'fa-spinner animate-spin' : 'fa-search'} `} />
-        </div>
-
-        {(showClean &&
-            <div className='-ml-12 cursor-pointer float-right items-center justify-center py-2'>
-                <i className='fas fa-times hover:text-black transform duration-200 text-gray-400 cursor-pointer   dark:hover:text-gray-300' onClick={cleanSearch} />
-            </div>
-        )}
-    </div>
+        <span>搜索</span>
+      </button>
+    </form>
+  )
 }
 
 export default SearchInput

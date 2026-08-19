@@ -1,27 +1,32 @@
+import { getUrlMigrations } from '@/lib/config'
 import { NextResponse } from 'next/server'
-import URL_MIGRATIONS from './conf/url-migrations.json'
 
-const normalizePathname = value => {
-  const pathname = String(value || '/')
-  if (pathname === '/') return '/'
-  return `/${pathname.replace(/^\/+|\/+$/g, '')}`
+function normalizePathname(pathname) {
+  if (!pathname || pathname === '/') return '/'
+  const withoutTrailingSlash = pathname.replace(/\/+$/, '')
+  return withoutTrailingSlash || '/'
+}
+
+function buildDestination(request, target) {
+  const url = request.nextUrl.clone()
+  const [targetPath, targetQuery = ''] = String(target).split('?')
+  url.pathname = targetPath.startsWith('/') ? targetPath : `/${targetPath}`
+  url.search = targetQuery ? `?${targetQuery}` : request.nextUrl.search
+  return url
 }
 
 export function middleware(request) {
-  const source = normalizePathname(request.nextUrl.pathname)
-  const destinationPath = URL_MIGRATIONS[source]
+  const migrations = getUrlMigrations()
+  const pathname = normalizePathname(request.nextUrl.pathname)
+  const target = migrations[pathname]
 
-  if (!destinationPath) {
+  if (!target) {
     return NextResponse.next()
   }
 
-  const destination = request.nextUrl.clone()
-  destination.pathname = normalizePathname(destinationPath)
-  return NextResponse.redirect(destination, 308)
+  return NextResponse.redirect(buildDestination(request, target), 301)
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)'
-  ]
+  matcher: ['/article/:path*', '/page/:path*']
 }

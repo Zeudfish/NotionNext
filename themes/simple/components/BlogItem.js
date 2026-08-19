@@ -1,104 +1,128 @@
 import LazyImage from '@/components/LazyImage'
 import NotionPage from '@/components/NotionPage'
+import SmartLink from '@/components/SmartLink'
 import TwikooCommentCount from '@/components/TwikooCommentCount'
 import { siteConfig } from '@/lib/config'
 import { useGlobal } from '@/lib/global'
 import { formatDateFmt } from '@/lib/utils/formatDate'
-import SmartLink from '@/components/SmartLink'
 import CONFIG from '../config'
 
-export const BlogItem = props => {
-  const { post } = props
+const getLabel = value => {
+  if (Array.isArray(value)) return getLabel(value[0])
+  if (value && typeof value === 'object') {
+    return getLabel(value.name || value.title || value.label)
+  }
+  return value ? String(value) : ''
+}
+
+export const BlogItem = ({ post }) => {
   const { NOTION_CONFIG } = useGlobal()
   const showPageCover = siteConfig('SIMPLE_POST_COVER_ENABLE', false, CONFIG)
   const showPreview =
-    siteConfig('POST_LIST_PREVIEW', false, NOTION_CONFIG) && post.blockMap
+    !post.searchHit &&
+    siteConfig('POST_LIST_PREVIEW', false, NOTION_CONFIG) &&
+    post.blockMap
+  const category = getLabel(post.category)
+  const publishDate = post.date?.start_date || post.publishDay || post.createdTime
+  const archiveMonth = post.publishDate
+    ? formatDateFmt(post.publishDate, 'yyyy-MM')
+    : ''
 
   return (
-    <article className='zeurd-blog-item rounded-3xl border border-slate-200/70 bg-white/70 p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg dark:border-slate-800 dark:bg-slate-950/60 md:p-7'>
-      <div className='flex h-full flex-col gap-5'>
-        {showPageCover && (
-          <SmartLink
-            href={post.href}
-            className='block overflow-hidden rounded-2xl'>
-            <LazyImage
-              src={post?.pageCoverThumbnail}
-              className='aspect-[16/8] w-full object-cover object-center transition duration-500 hover:scale-105'
-            />
+    <article className='zeurd-blog-item'>
+      {showPageCover && post?.pageCoverThumbnail && (
+        <SmartLink
+          href={post.href}
+          className='zeurd-blog-cover'
+          aria-label={`阅读《${post.title}》`}>
+          <LazyImage
+            src={post.pageCoverThumbnail}
+            alt={post.title || '文章封面'}
+            width={1200}
+            height={600}
+            className='zeurd-blog-cover-image'
+          />
+        </SmartLink>
+      )}
+
+      <div className='zeurd-blog-content'>
+        <h2>
+          <SmartLink href={post.href} className='zeurd-blog-title'>
+            {post.title}
           </SmartLink>
-        )}
+        </h2>
 
-        <div className='flex flex-1 flex-col'>
-          <h2 className='mb-3'>
-            <SmartLink
-              href={post.href}
-              className='blog-item-title menu-link text-xl font-extrabold leading-snug text-slate-900 no-underline md:text-2xl'>
-              {post.title}
+        <div className='zeurd-blog-meta' aria-label='文章信息'>
+          {archiveMonth ? (
+            <SmartLink href={`/archive#${archiveMonth}`}>
+              <i className='fa-regular fa-clock' aria-hidden='true' />
+              <time dateTime={post.date?.start_date || post.publishDay}>
+                {publishDate}
+              </time>
             </SmartLink>
-          </h2>
-
-          <header className='mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-slate-500 dark:text-slate-400'>
-            <SmartLink
-              className='transition hover:text-blue-600'
-              href={`/archive#${formatDateFmt(post?.publishDate, 'yyyy-MM')}`}>
-              <i className='fa-regular fa-clock mr-1.5' />
-              {post.date?.start_date || post.publishDay || post.createdTime}
-            </SmartLink>
-
-            {post.category && (
-              <SmartLink
-                href={`/category/${encodeURIComponent(post.category)}`}
-                className='transition hover:text-blue-600'>
-                <i className='fa-regular fa-folder mr-1.5' />
-                {post.category}
-              </SmartLink>
-            )}
-
-            <TwikooCommentCount post={post} />
-          </header>
-
-          {post?.tags?.length > 0 && (
-            <div className='mb-4 flex flex-wrap gap-2'>
-              {post.tags.map(tag => (
-                <SmartLink
-                  key={tag}
-                  href={`/tag/${encodeURIComponent(tag)}`}
-                  className='rounded-full border border-blue-100 bg-blue-50/70 px-2.5 py-1 text-xs font-semibold text-blue-700 no-underline transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-300'>
-                  {tag}
-                </SmartLink>
-              ))}
-            </div>
+          ) : (
+            <span>
+              <i className='fa-regular fa-clock' aria-hidden='true' />
+              <time dateTime={post.date?.start_date || post.publishDay}>
+                {publishDate}
+              </time>
+            </span>
           )}
 
-          <main className='mb-5 text-sm leading-7 text-slate-600 dark:text-slate-300 md:text-[0.95rem]'>
-            {!showPreview && post.summary && (
-              <p className='zeurd-summary-clamp m-0'>{post.summary}</p>
-            )}
-            {showPreview && post?.blockMap && (
-              <div className='overflow-hidden'>
-                <NotionPage post={post} />
-              </div>
-            )}
-          </main>
-
-          <div className='mt-auto'>
-            <SmartLink
-              href={post.href}
-              className='inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/80 px-4 py-2 text-xs font-bold text-blue-700 no-underline transition hover:border-orange-200 hover:text-orange-700 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-300'>
-              阅读全文 <i className='fa-solid fa-arrow-right text-[0.65rem]' />
+          {category && (
+            <SmartLink href={`/category/${encodeURIComponent(category)}`}>
+              <i className='fa-regular fa-folder' aria-hidden='true' />
+              <span>{category}</span>
             </SmartLink>
+          )}
+
+          <TwikooCommentCount post={post} />
+        </div>
+
+        {post?.tags?.length > 0 && (
+          <div className='zeurd-tag-row' aria-label='文章标签'>
+            {post.tags.map(tag => {
+              const tagName = getLabel(tag)
+              return tagName ? (
+                <SmartLink
+                  key={tagName}
+                  href={`/tag/${encodeURIComponent(tagName)}`}
+                  className='zeurd-tag-chip'>
+                  {tagName}
+                </SmartLink>
+              ) : null
+            })}
           </div>
+        )}
+
+        <div className='zeurd-blog-summary'>
+          {post.searchHit ? (
+            <p className='zeurd-search-hit'>
+              <span className='zeurd-search-hit-source'>
+                命中{post.searchMatchSource || '内容'}
+              </span>
+              {post.searchHit}
+            </p>
+          ) : (
+            !showPreview && post.summary && (
+              <p className='zeurd-summary-clamp'>{post.summary}</p>
+            )
+          )}
+
+          {showPreview && (
+            <div className='zeurd-list-preview'>
+              <NotionPage post={post} />
+            </div>
+          )}
+        </div>
+
+        <div className='zeurd-blog-actions'>
+          <SmartLink href={post.href} className='zeurd-read-more zeurd-control'>
+            <span>阅读全文</span>
+            <i className='fa-solid fa-arrow-right' aria-hidden='true' />
+          </SmartLink>
         </div>
       </div>
-
-      <style jsx>{`
-        .zeurd-summary-clamp {
-          display: -webkit-box;
-          overflow: hidden;
-          -webkit-box-orient: vertical;
-          -webkit-line-clamp: 3;
-        }
-      `}</style>
     </article>
   )
 }

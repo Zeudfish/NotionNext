@@ -1,10 +1,5 @@
 import { useEffect, useImperativeHandle, useRef } from 'react'
 
-/**
- * 折叠面板组件，支持水平折叠、垂直折叠
- * @param {type:['horizontal','vertical'], isOpen} props
- * @returns
- */
 const Collapse = ({
   type = 'vertical',
   isOpen = false,
@@ -14,94 +9,61 @@ const Collapse = ({
   collapseRef
 }) => {
   const ref = useRef(null)
+  const dimension = type === 'horizontal' ? 'width' : 'height'
 
-  useImperativeHandle(collapseRef, () => {
-    return {
-      /**
-       * 当子元素高度变化时，可调用此方法更新折叠组件的高度
-       * @param {*} param0
-       */
-      updateCollapseHeight: ({ height, increase }) => {
-        if (isOpen) {
-          ref.current.style.height = ref.current.scrollHeight
-          ref.current.style.height = 'auto'
-        }
-      }
-    }
-  })
+  const getExpandedSize = element =>
+    type === 'horizontal' ? element.scrollWidth : element.scrollHeight
 
-  /**
-   * 折叠
-   * @param {*} element
-   */
-  const collapseSection = element => {
-    const sectionHeight = element.scrollHeight
-    const sectionWidth = element.scrollWidth
+  const setExpandedSize = element => {
+    element.style[dimension] = String(getExpandedSize(element)) + 'px'
+  }
 
-    requestAnimationFrame(function () {
-      switch (type) {
-        case 'horizontal':
-          element.style.width = sectionWidth + 'px'
-          requestAnimationFrame(function () {
-            element.style.width = 0 + 'px'
-          })
-          break
-        case 'vertical':
-          element.style.height = sectionHeight + 'px'
-          requestAnimationFrame(function () {
-            element.style.height = 0 + 'px'
-          })
-      }
+  const updateExpandedSize = () => {
+    const element = ref.current
+    if (!element || !isOpen) return
+
+    setExpandedSize(element)
+    window.requestAnimationFrame(() => {
+      if (ref.current && isOpen) ref.current.style[dimension] = 'auto'
     })
   }
 
-  /**
-   * 展开
-   * @param {*} element
-   */
-  const expandSection = element => {
-    const sectionHeight = element.scrollHeight
-    const sectionWidth = element.scrollWidth
-    let clearTime = 0
-    switch (type) {
-      case 'horizontal':
-        element.style.width = sectionWidth + 'px'
-        clearTime = setTimeout(() => {
-          element.style.width = 'auto'
-        }, 400)
-        break
-      case 'vertical':
-        element.style.height = sectionHeight + 'px'
-        clearTime = setTimeout(() => {
-          element.style.height = 'auto'
-        }, 400)
-    }
-
-    clearTimeout(clearTime)
-  }
+  useImperativeHandle(collapseRef, () => ({
+    updateCollapseHeight: updateExpandedSize
+  }))
 
   useEffect(() => {
+    const element = ref.current
+    if (!element) return undefined
+
+    let timer
     if (isOpen) {
-      expandSection(ref.current)
+      setExpandedSize(element)
+      timer = window.setTimeout(() => {
+        if (ref.current && isOpen) ref.current.style[dimension] = 'auto'
+      }, 320)
     } else {
-      collapseSection(ref.current)
+      if (element.style[dimension] === 'auto') {
+        setExpandedSize(element)
+      }
+      element.getBoundingClientRect()
+      element.style[dimension] = '0px'
     }
-    // 通知父组件高度变化
-    onHeightChange &&
-      onHeightChange({
-        height: ref.current.scrollHeight,
-        increase: isOpen
-      })
-  }, [isOpen])
+
+    onHeightChange?.({
+      height: element.scrollHeight,
+      increase: isOpen
+    })
+
+    return () => window.clearTimeout(timer)
+  }, [dimension, isOpen, onHeightChange, type])
 
   return (
     <div
       ref={ref}
-      style={
-        type === 'vertical'
-          ? { height: '0px', willChange: 'height' }
-          : { width: '0px', willChange: 'width' }
-      }
+      aria-hidden={!isOpen}
+      inert={isOpen ? undefined : ''}
+      style={{ [dimension]: '0px', willChange: dimension }}
       className={`${className || ''} overflow-hidden duration-300`}>
       {children}
     </div>

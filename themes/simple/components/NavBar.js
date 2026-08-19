@@ -1,62 +1,85 @@
 import SmartLink from '@/components/SmartLink'
 import { siteConfig } from '@/lib/config'
 import { useRouter } from 'next/router'
-import { useState } from 'react'
-import { useSimpleGlobal } from '..'
+import { useEffect, useRef, useState } from 'react'
+import { useSimpleGlobal } from '../context'
 import { MenuList } from './MenuList'
 
-/**
- * 菜单导航
- */
 export default function NavBar(props) {
-  const [showSearchInput, changeShowSearchInput] = useState(false)
+  const [showSearchInput, setShowSearchInput] = useState(false)
+  const [searchValue, setSearchValue] = useState('')
+  const composingRef = useRef(false)
   const router = useRouter()
   const { searchModal } = useSimpleGlobal()
 
-  const toggleShowSearchInput = () => {
+  useEffect(() => {
+    const closeSearch = () => setShowSearchInput(false)
+    router.events.on('routeChangeStart', closeSearch)
+    return () => router.events.off('routeChangeStart', closeSearch)
+  }, [router.events])
+
+  const toggleSearch = () => {
     if (siteConfig('ALGOLIA_APP_ID')) {
-      searchModal.current.openSearch()
-    } else {
-      changeShowSearchInput(!showSearchInput)
+      searchModal.current?.openSearch()
+      return
     }
+    setShowSearchInput(show => !show)
   }
 
-  const onKeyUp = event => {
-    if (event.key === 'Enter') {
-      const search = document.getElementById('simple-search').value
-      if (search) {
-        router.push({ pathname: `/search/${search}` })
-      }
+  const submitSearch = async event => {
+    event.preventDefault()
+    if (composingRef.current) return
+
+    const keyword = searchValue.trim()
+    if (!keyword) return
+    if (process.env.NEXT_PUBLIC_IS_EXPORT === 'true') {
+      await router.push({ pathname: '/search', query: { s: keyword } })
+    } else {
+      await router.push(`/search/${encodeURIComponent(keyword)}`)
     }
   }
 
   return (
-    <nav className='relative z-20 w-full border-t border-gray-100 bg-white dark:border-hexo-black-gray dark:bg-black md:pt-0'>
-      <div
-        id='nav-bar-inner'
-        className='mx-auto flex h-14 max-w-9/10 items-center gap-5 text-sm md:text-base'>
+    <nav className='zeurd-navbar' aria-label='主导航'>
+      <div id='nav-bar-inner' className='zeurd-navbar-inner'>
         {!showSearchInput && (
           <SmartLink
             href='/'
-            className='hidden h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 font-serif text-xl font-extrabold tracking-tight text-slate-900 no-underline transition hover:border-blue-300 hover:text-blue-600 dark:border-slate-700 dark:text-slate-100 md:inline-flex'
+            className='zeurd-navbar-logo zeurd-control'
             aria-label='返回 Zeurd 首页'>
             Z
           </SmartLink>
         )}
 
-        <div className='flex h-full min-w-0 flex-1 items-stretch'>
+        <div className='zeurd-navbar-content'>
           {showSearchInput ? (
-            <input
-              autoFocus
-              id='simple-search'
-              onKeyUp={onKeyUp}
-              className='h-full w-full bg-transparent px-1 outline-none'
-              aria-label='搜索文章'
-              type='search'
-              name='s'
-              autoComplete='off'
-              placeholder='输入关键词后按回车搜索'
-            />
+            <form className='zeurd-navbar-search' role='search' onSubmit={submitSearch}>
+              <label className='sr-only' htmlFor='simple-navbar-search'>
+                搜索文章
+              </label>
+              <input
+                autoFocus
+                id='simple-navbar-search'
+                value={searchValue}
+                onChange={event => setSearchValue(event.target.value)}
+                onCompositionStart={() => {
+                  composingRef.current = true
+                }}
+                onCompositionEnd={() => {
+                  composingRef.current = false
+                }}
+                onKeyDown={event => {
+                  if (event.key === 'Escape') setShowSearchInput(false)
+                }}
+                type='search'
+                name='s'
+                autoComplete='off'
+                placeholder='输入关键词后按回车搜索'
+              />
+              <button type='submit' className='zeurd-control' aria-label='开始搜索'>
+                <i className='fas fa-arrow-right' aria-hidden='true' />
+              </button>
+            </form>
           ) : (
             <MenuList {...props} />
           )}
@@ -64,15 +87,17 @@ export default function NavBar(props) {
 
         <button
           type='button'
-          onClick={toggleShowSearchInput}
-          className='grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-blue-300'
-          aria-label={showSearchInput ? '关闭搜索' : '搜索文章'}>
+          onClick={toggleSearch}
+          className='zeurd-navbar-search-toggle zeurd-control'
+          aria-label={showSearchInput ? '关闭搜索' : '搜索文章'}
+          aria-expanded={showSearchInput}>
           <i
             className={
               showSearchInput
                 ? 'fa-regular fa-circle-xmark'
                 : 'fa-solid fa-magnifying-glass'
             }
+            aria-hidden='true'
           />
         </button>
       </div>
