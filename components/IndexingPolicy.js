@@ -2,7 +2,8 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { siteConfig } from '@/lib/config'
 import {
-  isPublishedContentPage,
+  getCanonicalPathForPage,
+  isIndexableContentPage,
   normalizePathname,
   resolveMigratedPath
 } from '@/lib/site/publication'
@@ -26,20 +27,25 @@ const IndexingPolicy = pageProps => {
   const router = useRouter()
   const pathname = normalizePathname(router.asPath)
   const route = String(router.route || '')
+  const post = pageProps?.post
   const isSearch = pathname === '/search' || pathname.startsWith('/search/')
   const isNotFound = route === '/404' || pathname === '/404'
-  const isHiddenContent =
-    Boolean(pageProps?.post) && !isPublishedContentPage(pageProps.post)
+  const isNonIndexableContent = Boolean(post) && !isIndexableContentPage(post)
   const isEmptyCategory =
     (route.startsWith('/category/') || pathname.startsWith('/category/')) &&
     !hasVisibleCategoryContent(pageProps)
-  const noIndex = isSearch || isNotFound || isHiddenContent || isEmptyCategory
+  const noIndex =
+    isSearch || isNotFound || isNonIndexableContent || isEmptyCategory
   const robots = isNotFound
     ? 'noindex, nofollow'
     : noIndex
       ? 'noindex, follow'
       : INDEX_ROBOTS
-  const canonicalPath = noIndex ? null : resolveMigratedPath(pathname)
+  const canonicalPath = noIndex
+    ? null
+    : post
+      ? getCanonicalPathForPage(post)
+      : resolveMigratedPath(pathname)
   const link = siteConfig(
     'LINK',
     pageProps?.siteInfo?.link,
