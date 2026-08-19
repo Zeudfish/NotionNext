@@ -24,12 +24,6 @@ export default function Footer() {
             </a>
           )}
           <BeiAnGongAn />
-          <a
-            href='https://github.com/tangly1024/NotionNext'
-            target='_blank'
-            rel='noopener noreferrer'>
-            NotionNext {siteConfig('VERSION')}
-          </a>
         </nav>
 
         <DarkModeButton className='zeurd-footer-theme' />
