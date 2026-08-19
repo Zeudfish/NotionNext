@@ -55,10 +55,9 @@ export default function HomeOverview({ posts = [] }) {
           tags: Array.isArray(post.tags) ? post.tags : []
         }))
     : []
-  const taggedFeatured = allPosts.filter(post => post.tags.includes('推荐'))
-  const featuredPosts = (
-    taggedFeatured.length >= 3 ? taggedFeatured : allPosts
-  ).slice(0, 3)
+  const featuredPosts = allPosts
+    .filter(post => post.tags.includes('推荐'))
+    .slice(0, 3)
   const featuredIds = new Set(featuredPosts.map(post => post.id))
   const recentPosts = allPosts
     .filter(post => !featuredIds.has(post.id))

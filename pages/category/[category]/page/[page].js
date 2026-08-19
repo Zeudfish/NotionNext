@@ -1,6 +1,7 @@
 import BLOG from '@/blog.config'
 import { siteConfig } from '@/lib/config'
 import { fetchGlobalAllData } from '@/lib/db/SiteDataApi'
+import { getCategoryIntroduction } from '@/lib/site/publication'
 import { DynamicLayout } from '@/themes/theme'
 
 /**
@@ -32,9 +33,13 @@ export async function getStaticProps({ params: { category, page } }) {
   )
 
   delete props.allPages
-  props.page = page
 
-  props = { ...props, category, page }
+  props = {
+    ...props,
+    category,
+    categoryDescription: getCategoryIntroduction(category),
+    page
+  }
 
   return {
     props,
