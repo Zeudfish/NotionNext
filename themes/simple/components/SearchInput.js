@@ -33,7 +33,7 @@ const SearchInput = ({ keyword, cRef, className = '' }) => {
     try {
       if (!search) {
         await router.push('/search')
-      } else if (process.env.EXPORT) {
+      } else if (process.env.NEXT_PUBLIC_IS_EXPORT === 'true') {
         await router.push({ pathname: '/search', query: { s: search } })
       } else {
         await router.push(`/search/${encodeURIComponent(search)}`)

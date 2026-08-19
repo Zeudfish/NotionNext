@@ -32,7 +32,7 @@ export default function NavBar(props) {
 
     const keyword = searchValue.trim()
     if (!keyword) return
-    if (process.env.EXPORT) {
+    if (process.env.NEXT_PUBLIC_IS_EXPORT === 'true') {
       await router.push({ pathname: '/search', query: { s: keyword } })
     } else {
       await router.push(`/search/${encodeURIComponent(keyword)}`)

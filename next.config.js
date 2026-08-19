@@ -197,6 +197,9 @@ const nextConfig = {
     ignoreDuringBuilds: true
   },
   output: getOutput(),
+  env: {
+    NEXT_PUBLIC_IS_EXPORT: isExport() ? 'true' : 'false'
+  },
   staticPageGenerationTimeout: getStaticPageGenerationTimeoutSec(),
   compress: true,
   poweredByHeader: false,
