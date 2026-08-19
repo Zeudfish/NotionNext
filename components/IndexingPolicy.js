@@ -17,10 +17,15 @@ const buildCanonicalUrl = (baseUrl, pathname) => {
   return pathname === '/' ? `${base}/` : `${base}${pathname}`
 }
 
-const hasVisibleCategoryContent = pageProps => {
-  if (Array.isArray(pageProps?.posts)) return pageProps.posts.length > 0
-  if (Array.isArray(pageProps?.allPosts)) return pageProps.allPosts.length > 0
-  return true
+const hasIndexableCategoryContent = pageProps => {
+  const postCount = Number(pageProps?.postCount)
+  const hasPosts = Number.isFinite(postCount)
+    ? postCount > 0
+    : Array.isArray(pageProps?.posts) && pageProps.posts.length > 0
+  const hasIntroduction = Boolean(
+    String(pageProps?.categoryDescription || '').trim()
+  )
+  return hasPosts && hasIntroduction
 }
 
 const IndexingPolicy = pageProps => {
@@ -31,11 +36,20 @@ const IndexingPolicy = pageProps => {
   const isSearch = pathname === '/search' || pathname.startsWith('/search/')
   const isNotFound = route === '/404' || pathname === '/404'
   const isNonIndexableContent = Boolean(post) && !isIndexableContentPage(post)
-  const isEmptyCategory =
-    (route.startsWith('/category/') || pathname.startsWith('/category/')) &&
-    !hasVisibleCategoryContent(pageProps)
+  const isCategoryIndex = pathname === '/category'
+  const isCategoryRoute =
+    route.startsWith('/category/') || pathname.startsWith('/category/')
+  const isCategoryPagination =
+    isCategoryRoute && pageProps?.page !== undefined && pageProps?.page !== null
+  const isNonIndexableCategory =
+    isCategoryRoute &&
+    (isCategoryPagination || !hasIndexableCategoryContent(pageProps))
   const noIndex =
-    isSearch || isNotFound || isNonIndexableContent || isEmptyCategory
+    isSearch ||
+    isNotFound ||
+    isNonIndexableContent ||
+    isCategoryIndex ||
+    isNonIndexableCategory
   const robots = isNotFound
     ? 'noindex, nofollow'
     : noIndex
