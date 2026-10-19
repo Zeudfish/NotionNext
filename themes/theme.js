@@ -6,7 +6,23 @@ import { getQueryParam, getQueryVariable, isBrowser } from '../lib/utils'
 
 // 在next.config.js中扫描所有主题
 export const { THEMES = [] } = getConfig()?.publicRuntimeConfig || {}
-const baseLayoutCache = new Map()
+// Next must register the default shell before hydration. Creating this dynamic
+// during render leaves its SSR tree unclaimed while the client first renders null.
+const SimpleBaseLayout = dynamic(
+  () => import('@/themes/simple').then(theme => theme.LayoutBase),
+  { ssr: true }
+)
+const SimplePageLayout = dynamic(
+  () => import('@/themes/simple').then(theme => {
+    const PageLayout = props => {
+      const SelectedLayout = theme[props.layoutName] || theme.LayoutSlug
+      return <SelectedLayout {...props} />
+    }
+    return PageLayout
+  }),
+  { ssr: true }
+)
+const baseLayoutCache = new Map([['simple', SimpleBaseLayout]])
 const layoutByThemeCache = new Map()
 let domFixTimer = null
 
@@ -156,6 +172,7 @@ export const DynamicLayout = props => {
 export const useLayoutByTheme = ({ layoutName, theme }) => {
   const router = useRouter()
   const themeQuery = getCurrentTheme(router, theme)
+  if (themeQuery === 'simple') return SimplePageLayout
   const cacheKey = `${themeQuery}:${layoutName}`
 
   if (layoutByThemeCache.has(cacheKey)) {

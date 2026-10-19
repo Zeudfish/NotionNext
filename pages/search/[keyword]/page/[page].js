@@ -5,6 +5,7 @@ import {
   normalizeSearchKeyword,
   searchPublishedPosts
 } from '@/lib/search/searchPosts'
+import { isExport } from '@/lib/utils/buildMode'
 import { DynamicLayout } from '@/themes/theme'
 
 const Index = props => {
@@ -32,7 +33,18 @@ export async function getStaticProps({ params: { keyword, page }, locale }) {
   const totalPages = Math.max(1, Math.ceil(results.length / postsPerPage))
 
   if (currentPage > totalPages) {
-    return { notFound: true }
+    if (isExport()) return { notFound: true }
+
+    const interval = siteConfig(
+      'NEXT_REVALIDATE_SECOND',
+      BLOG.NEXT_REVALIDATE_SECOND,
+      props.NOTION_CONFIG
+    )
+    return {
+      notFound: true,
+      // Published results can grow, so this URL must be checked again.
+      revalidate: Number.isInteger(interval) && interval > 0 ? interval : 60
+    }
   }
 
   const start = postsPerPage * (currentPage - 1)

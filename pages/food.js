@@ -1,4 +1,3 @@
-import Head from 'next/head'
 import { useMemo, useState } from 'react'
 import SmartLink from '@/components/SmartLink'
 import { fetchGlobalAllData } from '@/lib/db/SiteDataApi'
@@ -138,14 +137,6 @@ export default function FoodPage({ allItems, defaultItems, options }) {
 
   return (
     <main className='food-page'>
-      <Head>
-        <title>上海吃饭清单 | Zeurd</title>
-        <meta
-          name='description'
-          content='Zeurd 的上海吃饭清单：按复刷意愿和推荐程度整理，支持按区域、人均、菜系和等级筛选。'
-        />
-      </Head>
-
       <div className='food-top-actions'>
         <SmartLink href='/' className='food-home-link' aria-label='返回首页'>
           <i className='fas fa-home' />
@@ -412,8 +403,11 @@ export async function getStaticProps(req) {
     allItems = sortFoodItems(getFoodItemsFromBlockMap(foodRecordMap))
   }
 
+  delete props.allPages
+
   return {
     props: {
+      ...props,
       allItems,
       defaultItems: getDefaultFoodItems(allItems, 10),
       options: getFoodOptions(allItems)
