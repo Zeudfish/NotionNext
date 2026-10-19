@@ -316,6 +316,15 @@ const getSEOMeta = (props, router, locale) => {
         slug: 'archive',
         type: 'website'
       }
+    case '/food':
+      return {
+        title: `上海吃饭清单 | ${siteInfo?.title || TITLE}`,
+        description:
+          'Zeurd 的上海吃饭清单：按复刷意愿和推荐程度整理，支持按区域、人均、菜系和等级筛选。',
+        image: siteInfo?.pageCover,
+        slug: 'food',
+        type: 'website'
+      }
     case '/page/[page]':
       return {
         title: `${page} | Page | ${siteInfo?.title}`,
